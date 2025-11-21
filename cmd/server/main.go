@@ -1,24 +1,20 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/snnyvrz/go-book-crud-gin/internal/handler"
 )
 
 func main() {
-	r := gin.Default()
+	e := gin.Default()
 
-	r.SetTrustedProxies([]string{
+	e.SetTrustedProxies([]string{
 		"127.0.0.1",
 		"::1",
 	})
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-		})
-	})
+	healthHandler := handler.NewHealthHandler()
+	healthHandler.RegisterRoutes(e)
 
-	r.Run(":8080")
+	e.Run(":8080")
 }
