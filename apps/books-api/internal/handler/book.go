@@ -27,6 +27,13 @@ type CreateBookRequest struct {
 	PublishedAt *model.Date `json:"published_at"`
 }
 
+type UpdateBookRequest struct {
+	Title       *string     `json:"title" binding:"omitempty,min=1"`
+	Author      *string     `json:"author" binding:"omitempty,min=1"`
+	Description *string     `json:"description" binding:"omitempty,max=2000"`
+	PublishedAt *model.Date `json:"published_at"`
+}
+
 type BookResponse struct {
 	ID          uuid.UUID   `json:"id"`
 	Title       string      `json:"title"`
@@ -41,6 +48,8 @@ func (h *BookHandler) RegisterRoutes(e *gin.Engine) {
 	e.POST("/books", h.CreateBook)
 	e.GET("/books", h.ListBooks)
 	e.GET("/books/:id", h.GetBookByID)
+	e.PATCH("/books/:id", h.UpdateBook)
+	e.DELETE("/books/:id", h.DeleteBook)
 }
 
 func toBookResponse(b model.Book) BookResponse {
@@ -147,4 +156,108 @@ func (h *BookHandler) GetBookByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toBookResponse(book))
+}
+
+func (h *BookHandler) UpdateBook(c *gin.Context) {
+	idParam := c.Param("id")
+
+	bookID, err := uuid.Parse(idParam)
+	if err != nil {
+		writeError(c, http.StatusBadRequest,
+			"INVALID_BOOK_ID",
+			"invalid book id",
+		)
+		return
+	}
+
+	var book model.Book
+	if err := h.db.First(&book, "id = ?", bookID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			writeError(c, http.StatusNotFound,
+				"BOOK_NOT_FOUND",
+				"book not found",
+			)
+			return
+		}
+
+		writeError(c, http.StatusInternalServerError,
+			"BOOK_FETCH_FAILED",
+			"failed to fetch book",
+		)
+		return
+	}
+
+	var req UpdateBookRequest
+	if !validation.BindAndValidateJSON(c, &req) {
+		return
+	}
+
+	if req.Title == nil && req.Author == nil &&
+		req.Description == nil && req.PublishedAt == nil {
+		writeError(c, http.StatusBadRequest,
+			"NO_FIELDS_TO_UPDATE",
+			"at least one field must be provided to update",
+		)
+		return
+	}
+
+	if req.Title != nil {
+		book.Title = *req.Title
+	}
+	if req.Author != nil {
+		book.Author = *req.Author
+	}
+	if req.Description != nil {
+		book.Description = *req.Description
+	}
+	if req.PublishedAt != nil {
+		if req.PublishedAt.Time.IsZero() {
+			book.PublishedAt = nil
+		} else {
+			t := req.PublishedAt.Time
+			book.PublishedAt = &t
+		}
+	}
+
+	if err := h.db.Save(&book).Error; err != nil {
+		writeError(c, http.StatusInternalServerError,
+			"BOOK_UPDATE_FAILED",
+			"failed to update book",
+		)
+		return
+	}
+
+	c.JSON(http.StatusOK, toBookResponse(book))
+}
+
+func (h *BookHandler) DeleteBook(c *gin.Context) {
+	idParam := c.Param("id")
+
+	bookID, err := uuid.Parse(idParam)
+	if err != nil {
+		writeError(c, http.StatusBadRequest,
+			"INVALID_BOOK_ID",
+			"invalid book id",
+		)
+		return
+	}
+
+	result := h.db.Delete(&model.Book{}, "id = ?", bookID)
+	if result.Error != nil {
+		writeError(c, http.StatusInternalServerError,
+			"BOOK_DELETE_FAILED",
+			"failed to delete book",
+		)
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		writeError(c, http.StatusNotFound,
+			"BOOK_NOT_FOUND",
+			"book not found",
+		)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
