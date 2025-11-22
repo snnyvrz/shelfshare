@@ -26,7 +26,7 @@ func main() {
 		"::1",
 	})
 
-	database := db.Connect()
+	database := db.ConnectWithRetry(cfg)
 
 	if err := database.AutoMigrate(&model.Book{}); err != nil {
 		panic(err)
