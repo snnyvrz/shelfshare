@@ -99,9 +99,9 @@ func (h *BookHandler) ListBooks(c *gin.Context) {
 		return
 	}
 
-	responses := make([]BookResponse, len(books))
-	for i, b := range books {
-		responses[i] = toBookResponse(b)
+	responses := make([]BookResponse, 0, len(books))
+	for _, b := range books {
+		responses = append(responses, toBookResponse(b))
 	}
 
 	c.JSON(http.StatusOK, responses)
