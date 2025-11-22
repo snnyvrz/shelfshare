@@ -1,4 +1,4 @@
-module github.com/snnyvrz/go-book-crud-gin
+module github.com/snnyvrz/shelfshare/apps/books-api
 
 go 1.25.4
 
@@ -6,6 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/google/uuid v1.6.0
+	github.com/snnyvrz/go-book-crud-gin v0.0.0-20251122152322-0adc1e953353
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )

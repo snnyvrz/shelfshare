@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/snnyvrz/go-book-crud-gin/internal/config"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )

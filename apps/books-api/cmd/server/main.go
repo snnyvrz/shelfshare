@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/snnyvrz/go-book-crud-gin/internal/config"
-	"github.com/snnyvrz/go-book-crud-gin/internal/db"
-	"github.com/snnyvrz/go-book-crud-gin/internal/handler"
-	"github.com/snnyvrz/go-book-crud-gin/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/config"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/db"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/handler"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/model"
 )
 
 const appVersion = "0.1.0"

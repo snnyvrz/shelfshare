@@ -3,7 +3,7 @@ package repository
 import (
 	"gorm.io/gorm"
 
-	"github.com/snnyvrz/go-book-crud-gin/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/model"
 )
 
 type BookRepository struct {
