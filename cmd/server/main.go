@@ -35,5 +35,8 @@ func main() {
 	healthHandler := handler.NewHealthHandler(database, startTime, appVersion)
 	healthHandler.RegisterRoutes(e)
 
+	bookHandler := handler.NewBookHandler(database)
+	bookHandler.RegisterRoutes(e)
+
 	e.Run(":8080")
 }

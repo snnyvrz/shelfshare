@@ -12,7 +12,7 @@ type Book struct {
 	Title       string    `gorm:"not null"`
 	Author      string    `gorm:"not null"`
 	Description string
-	PublishedAt *time.Time
+	PublishedAt *Date `gorm:"type:date"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
