@@ -22,7 +22,6 @@ type ErrorResponse struct {
 
 func BindAndValidateJSON(c *gin.Context, dst any) bool {
 	if err := c.ShouldBindJSON(dst); err != nil {
-		// Validation errors (binding + validation)
 		if verrs, ok := err.(validator.ValidationErrors); ok {
 			resp := formatValidationErrors(verrs)
 			c.AbortWithStatusJSON(http.StatusBadRequest, resp)

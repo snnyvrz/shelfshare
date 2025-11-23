@@ -1,15 +1,23 @@
 {
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "books-api",
-  "root": "apps/books-api",
-  "sourceRoot": "apps/books-api",
-  "projectType": "application",
-  "targets": {
-    "serve": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "cd apps/books-api && make dev"
-      }
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "name": "books-api",
+    "root": "apps/books-api",
+    "sourceRoot": "apps/books-api",
+    "projectType": "application",
+    "targets": {
+        "serve": {
+            "executor": "nx:run-commands",
+            "dependsOn": ["swagger"],
+            "options": {
+                "command": "cd apps/books-api && make dev"
+            }
+        },
+        "swagger": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "swag init -g cmd/server/main.go -o internal/docs",
+                "cwd": "apps/books-api"
+            }
+        }
     }
-  }
 }
