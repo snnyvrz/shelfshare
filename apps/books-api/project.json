@@ -15,7 +15,7 @@
         "swagger": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "swag init -g cmd/server/main.go -o internal/docs",
+                "command": "go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/server/main.go -o internal/docs",
                 "cwd": "apps/books-api"
             }
         }
