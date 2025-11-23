@@ -44,12 +44,15 @@ type BookResponse struct {
 	UpdatedAt   model.Date  `json:"updated_at"`
 }
 
-func (h *BookHandler) RegisterRoutes(e *gin.Engine) {
-	e.POST("/books", h.CreateBook)
-	e.GET("/books", h.ListBooks)
-	e.GET("/books/:id", h.GetBookByID)
-	e.PATCH("/books/:id", h.UpdateBook)
-	e.DELETE("/books/:id", h.DeleteBook)
+func (h *BookHandler) RegisterRoutes(r *gin.RouterGroup) {
+	books := r.Group("/books")
+	{
+		books.GET("", h.ListBooks)
+		books.GET("/:id", h.GetBookByID)
+		books.PATCH("/:id", h.UpdateBook)
+		books.DELETE("/:id", h.DeleteBook)
+		books.POST("", h.CreateBook)
+	}
 }
 
 func toBookResponse(b model.Book) BookResponse {

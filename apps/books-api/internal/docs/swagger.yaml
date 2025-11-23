@@ -1,0 +1,14 @@
+basePath: /api
+host: localhost:8080
+info:
+  contact:
+    email: sinaniya@gmail.com
+    name: Sina Niyavarzi
+  description: API for managing books in Shelfshare.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Shelfshare Books API
+  version: "1.0"
+paths: {}
+swagger: "2.0"
