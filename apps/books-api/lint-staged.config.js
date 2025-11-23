@@ -1,3 +1,3 @@
 export default {
-    "*.go": ["make lint", "make fmt"],
+    "*.go": ["go vet", "go fmt"],
 };

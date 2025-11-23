@@ -4,14 +4,18 @@
     "root": "apps/books-api",
     "sourceRoot": "apps/books-api",
     "projectType": "application",
+
     "targets": {
         "serve": {
             "executor": "nx:run-commands",
             "dependsOn": ["swagger"],
             "options": {
-                "command": "cd apps/books-api && make dev"
-            }
+                "command": "air",
+                "cwd": "apps/books-api"
+            },
+            "cache": false
         },
+
         "swagger": {
             "executor": "nx:run-commands",
             "options": {

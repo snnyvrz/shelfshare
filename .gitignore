@@ -2,9 +2,12 @@
 
 node_modules/
 
+dist/
+
 tmp/
 
 .env
+.env.local
 
 .nx/cache
 .nx/workspace-data

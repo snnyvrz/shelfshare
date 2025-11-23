@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -17,6 +19,8 @@ type Config struct {
 }
 
 func Load() *Config {
+	_ = godotenv.Load()
+
 	cfg := &Config{
 		GinMode:   getenv("GIN_MODE", "debug"),
 		TZ:        getenv("TZ", "UTC"),
