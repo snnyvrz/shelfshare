@@ -8,16 +8,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/repository"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/validation"
 	"gorm.io/gorm"
 )
 
 type BookHandler struct {
-	db *gorm.DB
+	repo repository.BookRepository
 }
 
-func NewBookHandler(db *gorm.DB) *BookHandler {
-	return &BookHandler{db: db}
+func NewBookHandler(repo repository.BookRepository) *BookHandler {
+	return &BookHandler{repo: repo}
 }
 
 type CreateBookRequest struct {
@@ -136,7 +137,9 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		PublishedAt: pubAt,
 	}
 
-	if err := h.db.Create(&book).Error; err != nil {
+	ctx := c.Request.Context()
+
+	if err := h.repo.Create(ctx, &book); err != nil {
 		writeError(c, http.StatusInternalServerError,
 			"BOOK_CREATE_FAILED",
 			"failed to create book",
@@ -144,9 +147,17 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		return
 	}
 
-	h.db.Preload("Author").First(&book, "id = ?", book.ID)
+	// Ensure Author is loaded (repo handles Preload)
+	created, err := h.repo.FindByID(ctx, book.ID)
+	if err != nil {
+		writeError(c, http.StatusInternalServerError,
+			"BOOK_FETCH_FAILED",
+			"failed to fetch created book",
+		)
+		return
+	}
 
-	c.JSON(http.StatusCreated, toBookResponse(book))
+	c.JSON(http.StatusCreated, toBookResponse(*created))
 }
 
 // ListBooks godoc
@@ -158,9 +169,10 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 // @Failure      500  {object}  validation.ErrorResponse   "Internal server error"
 // @Router       /books [get]
 func (h *BookHandler) ListBooks(c *gin.Context) {
-	var books []model.Book
+	ctx := c.Request.Context()
 
-	if err := h.db.Preload("Author").Find(&books).Error; err != nil {
+	books, err := h.repo.List(ctx)
+	if err != nil {
 		writeError(c, http.StatusInternalServerError,
 			"BOOK_LIST_FAILED",
 			"failed to fetch books",
@@ -199,9 +211,10 @@ func (h *BookHandler) GetBookByID(c *gin.Context) {
 		return
 	}
 
-	var book model.Book
+	ctx := c.Request.Context()
 
-	if err := h.db.Preload("Author").First(&book, "id = ?", bookID).Error; err != nil {
+	book, err := h.repo.FindByID(ctx, bookID)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeError(c, http.StatusNotFound,
 				"BOOK_NOT_FOUND",
@@ -217,7 +230,7 @@ func (h *BookHandler) GetBookByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toBookResponse(book))
+	c.JSON(http.StatusOK, toBookResponse(*book))
 }
 
 // UpdateBook godoc
@@ -245,8 +258,10 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	var book model.Book
-	if err := h.db.First(&book, "id = ?", bookID).Error; err != nil {
+	ctx := c.Request.Context()
+
+	book, err := h.repo.FindByID(ctx, bookID)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeError(c, http.StatusNotFound,
 				"BOOK_NOT_FOUND",
@@ -294,7 +309,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		}
 	}
 
-	if err := h.db.Save(&book).Error; err != nil {
+	if err := h.repo.Update(ctx, book); err != nil {
 		writeError(c, http.StatusInternalServerError,
 			"BOOK_UPDATE_FAILED",
 			"failed to update book",
@@ -302,7 +317,8 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	if err := h.db.Preload("Author").First(&book, "id = ?", book.ID).Error; err != nil {
+	updated, err := h.repo.FindByID(ctx, book.ID)
+	if err != nil {
 		writeError(c, http.StatusInternalServerError,
 			"BOOK_FETCH_FAILED",
 			"failed to fetch updated book",
@@ -310,7 +326,7 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toBookResponse(book))
+	c.JSON(http.StatusOK, toBookResponse(*updated))
 }
 
 // DeleteBook godoc
@@ -336,19 +352,21 @@ func (h *BookHandler) DeleteBook(c *gin.Context) {
 		return
 	}
 
-	result := h.db.Delete(&model.Book{}, "id = ?", bookID)
-	if result.Error != nil {
+	ctx := c.Request.Context()
+
+	err = h.repo.Delete(ctx, bookID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			writeError(c, http.StatusNotFound,
+				"BOOK_NOT_FOUND",
+				"book not found",
+			)
+			return
+		}
+
 		writeError(c, http.StatusInternalServerError,
 			"BOOK_DELETE_FAILED",
 			"failed to delete book",
-		)
-		return
-	}
-
-	if result.RowsAffected == 0 {
-		writeError(c, http.StatusNotFound,
-			"BOOK_NOT_FOUND",
-			"book not found",
 		)
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/repository"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -63,7 +64,8 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
 
-	bh := NewBookHandler(db)
+	bookRepo := repository.NewGormBookRepository(db)
+	bh := NewBookHandler(bookRepo)
 	bh.RegisterRoutes(r.Group(""))
 	ah := NewAuthorHandler(db)
 	ah.RegisterRoutes(r.Group(""))

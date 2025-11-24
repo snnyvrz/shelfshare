@@ -1,10 +1,5 @@
-echo "🔎 Running books-api tests before push..."
-
 bunx nx test books-api
 
 if [ $? -ne 0 ]; then
-  echo "❌ Tests failed. Push blocked."
   exit 1
 fi
-
-echo "✅ Tests passed. Continuing push..."

@@ -22,6 +22,7 @@ import (
 	docs "github.com/snnyvrz/shelfshare/apps/books-api/internal/docs"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/handler"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/repository"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -55,7 +56,8 @@ func main() {
 
 	api := e.Group("/api")
 	{
-		bookHandler := handler.NewBookHandler(database)
+		bookRepo := repository.NewGormBookRepository(database)
+		bookHandler := handler.NewBookHandler(bookRepo)
 		bookHandler.RegisterRoutes(api)
 		authorHandler := handler.NewAuthorHandler(database)
 		authorHandler.RegisterRoutes(api)
