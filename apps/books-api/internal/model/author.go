@@ -9,7 +9,7 @@ import (
 
 type Author struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Name      string    `gorm:"not null"`
+	Name      string    `gorm:"not null;index"`
 	Bio       string
 	Books     []Book `json:"books,omitempty" gorm:"foreignKey:AuthorID"`
 	CreatedAt time.Time
