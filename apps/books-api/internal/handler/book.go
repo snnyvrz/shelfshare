@@ -24,23 +24,32 @@ type CreateBookRequest struct {
 	Title       string      `json:"title" binding:"required"`
 	AuthorID    uuid.UUID   `json:"author_id" binding:"required,uuid4"`
 	Description string      `json:"description"`
-	PublishedAt *model.Date `json:"published_at"`
+	PublishedAt *model.Date `json:"published_at" swaggertype:"string" example:"2025-11-24"`
 }
 
 type UpdateBookRequest struct {
 	Title       *string     `json:"title" binding:"omitempty,min=1"`
 	AuthorID    *uuid.UUID  `json:"author_id" binding:"omitempty,uuid4"`
 	Description *string     `json:"description" binding:"omitempty,max=2000"`
-	PublishedAt *model.Date `json:"published_at"`
+	PublishedAt *model.Date `json:"published_at" swaggertype:"string" example:"2025-11-24"`
 }
 type BookResponse struct {
 	ID          uuid.UUID      `json:"id"`
 	Title       string         `json:"title"`
 	Author      AuthorResponse `json:"author"`
 	Description string         `json:"description"`
-	PublishedAt *model.Date    `json:"published_at,omitempty"`
-	CreatedAt   model.Date     `json:"created_at"`
-	UpdatedAt   model.Date     `json:"updated_at"`
+	PublishedAt *model.Date    `json:"published_at,omitempty" swaggertype:"string" example:"2025-11-24"`
+	CreatedAt   model.Date     `json:"created_at" swaggertype:"string" example:"2025-11-24"`
+	UpdatedAt   model.Date     `json:"updated_at" swaggertype:"string" example:"2025-11-24"`
+}
+
+type BookSummaryResponse struct {
+	ID          uuid.UUID   `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	PublishedAt *model.Date `json:"published_at,omitempty" swaggertype:"string" example:"2025-11-24"`
+	CreatedAt   model.Date  `json:"created_at" swaggertype:"string" example:"2025-11-24"`
+	UpdatedAt   model.Date  `json:"updated_at" swaggertype:"string" example:"2025-11-24"`
 }
 
 func (h *BookHandler) RegisterRoutes(r *gin.RouterGroup) {
@@ -66,9 +75,27 @@ func toBookResponse(b model.Book) BookResponse {
 		Author: AuthorResponse{
 			ID:   b.Author.ID,
 			Name: b.Author.Name,
+			Bio:  b.Author.Bio,
+			CreatedAt: model.Date{
+				Time: b.Author.CreatedAt,
+			},
+			UpdatedAt: model.Date{
+				Time: b.Author.UpdatedAt,
+			},
 		},
 		Description: b.Description,
 		PublishedAt: pub,
+		CreatedAt:   model.Date{Time: b.CreatedAt},
+		UpdatedAt:   model.Date{Time: b.UpdatedAt},
+	}
+}
+
+func toBookSummaryResponse(b model.Book) BookSummaryResponse {
+	return BookSummaryResponse{
+		ID:          b.ID,
+		Title:       b.Title,
+		Description: b.Description,
+		PublishedAt: &model.Date{Time: *b.PublishedAt},
 		CreatedAt:   model.Date{Time: b.CreatedAt},
 		UpdatedAt:   model.Date{Time: b.UpdatedAt},
 	}

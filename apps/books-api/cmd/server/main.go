@@ -57,6 +57,8 @@ func main() {
 	{
 		bookHandler := handler.NewBookHandler(database)
 		bookHandler.RegisterRoutes(api)
+		authorHandler := handler.NewAuthorHandler(database)
+		authorHandler.RegisterRoutes(api)
 	}
 
 	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

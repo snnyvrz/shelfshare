@@ -1,4 +1,131 @@
 basePath: /api
+definitions:
+  handler.AuthorResponse:
+    properties:
+      bio:
+        type: string
+      books:
+        items:
+          $ref: '#/definitions/handler.BookSummaryResponse'
+        type: array
+      created_at:
+        example: "2025-11-24"
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        example: "2025-11-24"
+        type: string
+    type: object
+  handler.BookResponse:
+    properties:
+      author:
+        $ref: '#/definitions/handler.AuthorResponse'
+      created_at:
+        example: "2025-11-24"
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      published_at:
+        example: "2025-11-24"
+        type: string
+      title:
+        type: string
+      updated_at:
+        example: "2025-11-24"
+        type: string
+    type: object
+  handler.BookSummaryResponse:
+    properties:
+      created_at:
+        example: "2025-11-24"
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      published_at:
+        example: "2025-11-24"
+        type: string
+      title:
+        type: string
+      updated_at:
+        example: "2025-11-24"
+        type: string
+    type: object
+  handler.CreateAuthorRequest:
+    properties:
+      bio:
+        maxLength: 2000
+        type: string
+      name:
+        minLength: 1
+        type: string
+    required:
+    - name
+    type: object
+  handler.CreateBookRequest:
+    properties:
+      author_id:
+        type: string
+      description:
+        type: string
+      published_at:
+        example: "2025-11-24"
+        type: string
+      title:
+        type: string
+    required:
+    - author_id
+    - title
+    type: object
+  handler.UpdateAuthorRequest:
+    properties:
+      bio:
+        maxLength: 2000
+        type: string
+      name:
+        minLength: 1
+        type: string
+    type: object
+  handler.UpdateBookRequest:
+    properties:
+      author_id:
+        type: string
+      description:
+        maxLength: 2000
+        type: string
+      published_at:
+        example: "2025-11-24"
+        type: string
+      title:
+        minLength: 1
+        type: string
+    type: object
+  validation.ErrorResponse:
+    properties:
+      code:
+        type: string
+      errors:
+        items:
+          $ref: '#/definitions/validation.FieldError'
+        type: array
+      message:
+        type: string
+    type: object
+  validation.FieldError:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+      rule:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -10,5 +137,304 @@ info:
     url: https://opensource.org/licenses/MIT
   title: Shelfshare Books API
   version: "1.0"
-paths: {}
+paths:
+  /authors:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all authors
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.AuthorResponse'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: List authors
+      tags:
+      - authors
+    post:
+      consumes:
+      - application/json
+      description: Create a new author with name and optional bio
+      parameters:
+      - description: Author to create
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateAuthorRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.AuthorResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Create an author
+      tags:
+      - authors
+  /authors/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an author by ID
+      parameters:
+      - description: Author ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "404":
+          description: Author not found
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Delete an author
+      tags:
+      - authors
+    get:
+      consumes:
+      - application/json
+      description: Get a single author by its ID
+      parameters:
+      - description: Author ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AuthorResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "404":
+          description: Author not found
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Get author by ID
+      tags:
+      - authors
+    patch:
+      consumes:
+      - application/json
+      description: Partially update an existing author
+      parameters:
+      - description: Author ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Author fields to update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateAuthorRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.AuthorResponse'
+        "400":
+          description: Invalid ID or validation error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "404":
+          description: Author not found
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Update an author
+      tags:
+      - authors
+  /books:
+    get:
+      description: Get all books
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.BookResponse'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: List books
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      description: Create a new book with title, author, description and optional
+        published date
+      parameters:
+      - description: Book to create
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateBookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.BookResponse'
+        "400":
+          description: Validation error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Create a book
+      tags:
+      - books
+  /books/{id}:
+    delete:
+      description: Delete a book by its UUID
+      parameters:
+      - description: Book ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content
+          schema:
+            type: string
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "404":
+          description: Book not found
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Delete a book
+      tags:
+      - books
+    get:
+      description: Get a single book by its UUID
+      parameters:
+      - description: Book ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.BookResponse'
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "404":
+          description: Book not found
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Get a book by ID
+      tags:
+      - books
+    patch:
+      consumes:
+      - application/json
+      description: Partially update a book by its UUID
+      parameters:
+      - description: Book ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateBookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.BookResponse'
+        "400":
+          description: Invalid ID or payload
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "404":
+          description: Book not found
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      summary: Update a book
+      tags:
+      - books
 swagger: "2.0"

@@ -11,7 +11,7 @@ type Author struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
 	Name      string    `gorm:"not null"`
 	Bio       string
-	Books     []Book `gorm:"foreignKey:AuthorID"`
+	Books     []Book `json:"books,omitempty" gorm:"foreignKey:AuthorID"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

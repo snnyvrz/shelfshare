@@ -63,8 +63,10 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
 
-	h := NewBookHandler(db)
-	h.RegisterRoutes(r.Group(""))
+	bh := NewBookHandler(db)
+	bh.RegisterRoutes(r.Group(""))
+	ah := NewAuthorHandler(db)
+	ah.RegisterRoutes(r.Group(""))
 
 	return r
 }
