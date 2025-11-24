@@ -91,22 +91,19 @@ func toBookResponse(b model.Book) BookResponse {
 }
 
 func toBookSummaryResponse(b model.Book) BookSummaryResponse {
+	var pub *model.Date
+	if b.PublishedAt != nil && !b.PublishedAt.IsZero() {
+		pub = &model.Date{Time: *b.PublishedAt}
+	}
+
 	return BookSummaryResponse{
 		ID:          b.ID,
 		Title:       b.Title,
 		Description: b.Description,
-		PublishedAt: &model.Date{Time: *b.PublishedAt},
+		PublishedAt: pub,
 		CreatedAt:   model.Date{Time: b.CreatedAt},
 		UpdatedAt:   model.Date{Time: b.UpdatedAt},
 	}
-}
-
-func writeError(c *gin.Context, status int, code, message string) {
-	c.AbortWithStatusJSON(status, validation.ErrorResponse{
-		Code:    code,
-		Message: message,
-		Errors:  nil,
-	})
 }
 
 // CreateBook godoc
