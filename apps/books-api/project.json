@@ -34,7 +34,7 @@
         "coverage": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "go tool cover -html=coverage/coverage.out -o coverage/coverage.html",
+                "command": "mkdir -p coverage && go tool cover -html=coverage/coverage.out -o coverage/coverage.html",
                 "cwd": "apps/books-api"
             },
             "dependsOn": ["test"],
