@@ -147,7 +147,6 @@ func (h *BookHandler) CreateBook(c *gin.Context) {
 		return
 	}
 
-	// Ensure Author is loaded (repo handles Preload)
 	created, err := h.repo.FindByID(ctx, book.ID)
 	if err != nil {
 		writeError(c, http.StatusInternalServerError,
@@ -352,10 +351,7 @@ func (h *BookHandler) DeleteBook(c *gin.Context) {
 		return
 	}
 
-	ctx := c.Request.Context()
-
-	err = h.repo.Delete(ctx, bookID)
-	if err != nil {
+	if err := h.repo.Delete(c.Request.Context(), bookID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeError(c, http.StatusNotFound,
 				"BOOK_NOT_FOUND",

@@ -236,7 +236,6 @@ func (h *AuthorHandler) UpdateAuthor(c *gin.Context) {
 		return
 	}
 
-	// author still has Books preloaded from FindByID
 	c.JSON(http.StatusOK, toAuthorResponse(*author))
 }
 

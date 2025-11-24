@@ -38,40 +38,26 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func setupErrorDB(t *testing.T) *gorm.DB {
-	t.Helper()
-
-	dsn := "file:errdb_" + uuid.New().String() + "?mode=memory&cache=shared"
-
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("failed to connect to error test database: %v", err)
-	}
-
-	sqlDB, err := db.DB()
-	if err != nil {
-		t.Fatalf("failed to get sql.DB from gorm: %v", err)
-	}
-
-	t.Cleanup(func() {
-		_ = sqlDB.Close()
-	})
-
-	return db
-}
-
-func setupRouter(db *gorm.DB) *gin.Engine {
+func setupRouterWithRepos(
+	bookRepo repository.BookRepository,
+	authorRepo repository.AuthorRepository,
+) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
 
-	bookRepo := repository.NewGormBookRepository(db)
 	bh := NewBookHandler(bookRepo)
 	bh.RegisterRoutes(r.Group(""))
-	authorRepo := repository.NewAuthorRepository(db)
+
 	ah := NewAuthorHandler(authorRepo)
 	ah.RegisterRoutes(r.Group(""))
 
 	return r
+}
+
+func setupRouter(db *gorm.DB) *gin.Engine {
+	bookRepo := repository.NewGormBookRepository(db)
+	authorRepo := repository.NewAuthorRepository(db)
+	return setupRouterWithRepos(bookRepo, authorRepo)
 }
 
 func seedAuthor(t *testing.T, db *gorm.DB, name string) model.Author {

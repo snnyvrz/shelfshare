@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,11 +10,66 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/repository"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/validation"
 	"gorm.io/gorm"
 )
+
+type fakeBookRepo struct {
+	CreateFn   func(ctx context.Context, b *model.Book) error
+	ListFn     func(ctx context.Context) ([]model.Book, error)
+	FindByIDFn func(ctx context.Context, id uuid.UUID) (*model.Book, error)
+	UpdateFn   func(ctx context.Context, b *model.Book) error
+	DeleteFn   func(ctx context.Context, id uuid.UUID) error
+}
+
+func (f *fakeBookRepo) Create(ctx context.Context, b *model.Book) error {
+	if f.CreateFn != nil {
+		return f.CreateFn(ctx, b)
+	}
+	return nil
+}
+
+func (f *fakeBookRepo) List(ctx context.Context) ([]model.Book, error) {
+	if f.ListFn != nil {
+		return f.ListFn(ctx)
+	}
+	return nil, nil
+}
+
+func (f *fakeBookRepo) FindByID(ctx context.Context, id uuid.UUID) (*model.Book, error) {
+	if f.FindByIDFn != nil {
+		return f.FindByIDFn(ctx, id)
+	}
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (f *fakeBookRepo) Update(ctx context.Context, b *model.Book) error {
+	if f.UpdateFn != nil {
+		return f.UpdateFn(ctx, b)
+	}
+	return nil
+}
+
+func (f *fakeBookRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	if f.DeleteFn != nil {
+		return f.DeleteFn(ctx, id)
+	}
+	return nil
+}
+
+func setupBookRouterWithRepo(bookRepo repository.BookRepository) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.Default()
+
+	h := NewBookHandler(bookRepo)
+	h.RegisterRoutes(r.Group(""))
+
+	return r
+}
 
 func TestCreateBook_Success(t *testing.T) {
 	db := setupTestDB(t)
@@ -146,8 +202,13 @@ func TestCreateBook_ValidationError_MissingTitle(t *testing.T) {
 }
 
 func TestCreateBook_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	bookRepo := &fakeBookRepo{
+		CreateFn: func(ctx context.Context, b *model.Book) error {
+			return errors.New("forced create error")
+		},
+	}
+
+	router := setupBookRouterWithRepo(bookRepo)
 
 	body := CreateBookRequest{
 		Title:       "Error book",
@@ -178,6 +239,55 @@ func TestCreateBook_InternalError_Returns500(t *testing.T) {
 	}
 }
 
+func TestCreateBook_FetchCreatedBookError_Returns500(t *testing.T) {
+	// Fake repo: Create succeeds, FindByID fails
+	bookRepo := &fakeBookRepo{
+		CreateFn: func(ctx context.Context, b *model.Book) error {
+			// simulate successful create
+			if b.ID == uuid.Nil {
+				b.ID = uuid.New()
+			}
+			return nil
+		},
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Book, error) {
+			return nil, errors.New("forced fetch error")
+		},
+	}
+
+	router := setupBookRouterWithRepo(bookRepo)
+
+	body := CreateBookRequest{
+		Title:       "Book Title",
+		AuthorID:    uuid.New(),
+		Description: "Some description",
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	req, _ := http.NewRequest(http.MethodPost, "/books", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status 500, got %d, body=%s", w.Code, w.Body.String())
+	}
+
+	var resp validation.ErrorResponse
+	_ = json.Unmarshal(w.Body.Bytes(), &resp)
+
+	if resp.Code != "BOOK_FETCH_FAILED" {
+		t.Errorf("expected error code BOOK_FETCH_FAILED, got %q", resp.Code)
+	}
+	if resp.Message != "failed to fetch created book" {
+		t.Errorf("expected message %q, got %q", "failed to fetch created book", resp.Message)
+	}
+}
+
 func TestListBooks_Empty(t *testing.T) {
 	db := setupTestDB(t)
 	router := setupRouter(db)
@@ -205,7 +315,6 @@ func TestListBooks_WithData(t *testing.T) {
 	router := setupRouter(db)
 
 	author1 := seedAuthor(t, db, "Author 1")
-
 	author2 := seedAuthor(t, db, "Author 2")
 
 	book1 := seedBook(t, db, author1, "Book 1", "Desc 1", nil)
@@ -258,8 +367,13 @@ func TestListBooks_WithData(t *testing.T) {
 }
 
 func TestListBooks_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	bookRepo := &fakeBookRepo{
+		ListFn: func(ctx context.Context) ([]model.Book, error) {
+			return nil, errors.New("forced list error")
+		},
+	}
+
+	router := setupBookRouterWithRepo(bookRepo)
 
 	req, _ := http.NewRequest(http.MethodGet, "/books", nil)
 	w := httptest.NewRecorder()
@@ -284,7 +398,6 @@ func TestGetBookByID_Success(t *testing.T) {
 	router := setupRouter(db)
 
 	author := seedAuthor(t, db, "Evans")
-
 	book := seedBook(t, db, author, "DDD", "Blue Book", nil)
 
 	req, _ := http.NewRequest(http.MethodGet, "/books/"+book.ID.String(), nil)
@@ -354,8 +467,13 @@ func TestGetBookByID_NotFound(t *testing.T) {
 }
 
 func TestGetBookByID_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	bookRepo := &fakeBookRepo{
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Book, error) {
+			return nil, errors.New("forced fetch error")
+		},
+	}
+
+	router := setupBookRouterWithRepo(bookRepo)
 
 	id := "550e8400-e29b-41d4-a716-446655440000"
 	req, _ := http.NewRequest(http.MethodGet, "/books/"+id, nil)
@@ -382,7 +500,6 @@ func TestUpdateBook_Success(t *testing.T) {
 	router := setupRouter(db)
 
 	oldAuthor := seedAuthor(t, db, "Old Author")
-
 	newAuthor := seedAuthor(t, db, "New Author")
 
 	book := seedBook(t, db, oldAuthor, "Old Title", "Old Desc", nil)
@@ -508,7 +625,6 @@ func TestUpdateBook_NoFieldsToUpdate(t *testing.T) {
 	router := setupRouter(db)
 
 	author := seedAuthor(t, db, "Author")
-
 	book := seedBook(t, db, author, "Title", "Desc", nil)
 
 	b, _ := json.Marshal(map[string]any{})
@@ -535,7 +651,6 @@ func TestUpdateBook_ValidationError_InvalidTitle(t *testing.T) {
 	router := setupRouter(db)
 
 	author := seedAuthor(t, db, "Author")
-
 	book := seedBook(t, db, author, "Title", "Desc", nil)
 
 	payload := map[string]any{
@@ -572,7 +687,6 @@ func TestUpdateBook_ClearPublishedAt_WhenZeroDate(t *testing.T) {
 	pub := now.Add(-24 * time.Hour)
 
 	author := seedAuthor(t, db, "Author")
-
 	book := seedBook(t, db, author, "Title", "Desc", &pub)
 
 	payload := map[string]any{
@@ -614,8 +728,13 @@ func TestUpdateBook_ClearPublishedAt_WhenZeroDate(t *testing.T) {
 }
 
 func TestUpdateBook_InternalErrorOnFetch_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	bookRepo := &fakeBookRepo{
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Book, error) {
+			return nil, errors.New("forced fetch error")
+		},
+	}
+
+	router := setupBookRouterWithRepo(bookRepo)
 
 	id := "550e8400-e29b-41d4-a716-446655440000"
 	payload := map[string]any{
@@ -644,22 +763,18 @@ func TestUpdateBook_InternalErrorOnFetch_Returns500(t *testing.T) {
 }
 
 func TestUpdateBook_InternalErrorOnSave_Returns500(t *testing.T) {
-	db := setupTestDB(t)
-
-	author := seedAuthor(t, db, "Author")
-
-	book := seedBook(t, db, author, "Original", "Desc", nil)
-
-	if err := db.Callback().Update().
-		Before("gorm:before_update").
-		Register("force_update_error", func(tx *gorm.DB) {
-			tx.AddError(errors.New("forced update error"))
-		}); err != nil {
-		t.Fatalf("failed to register update callback: %v", err)
+	bookRepo := &fakeBookRepo{
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Book, error) {
+			return &model.Book{ID: id, Title: "Original"}, nil
+		},
+		UpdateFn: func(ctx context.Context, b *model.Book) error {
+			return errors.New("forced update error")
+		},
 	}
 
-	router := setupRouter(db)
+	router := setupBookRouterWithRepo(bookRepo)
 
+	id := "550e8400-e29b-41d4-a716-446655440000"
 	payload := map[string]any{
 		"title": "New Title",
 	}
@@ -667,7 +782,7 @@ func TestUpdateBook_InternalErrorOnSave_Returns500(t *testing.T) {
 
 	req, _ := http.NewRequest(
 		http.MethodPatch,
-		"/books/"+book.ID.String(),
+		"/books/"+id,
 		bytes.NewReader(b),
 	)
 	req.Header.Set("Content-Type", "application/json")
@@ -691,29 +806,23 @@ func TestUpdateBook_InternalErrorOnSave_Returns500(t *testing.T) {
 }
 
 func TestUpdateBook_InternalErrorOnFetchUpdated_Returns500(t *testing.T) {
-	db := setupTestDB(t)
-
-	author := seedAuthor(t, db, "Author")
-
-	book := seedBook(t, db, author, "Original", "Desc", nil)
-
-	var queryCount int
-	if err := db.Callback().Query().
-		Before("gorm:query").
-		Register("force_query_error_on_second", func(tx *gorm.DB) {
-			if tx.Statement.Table != "books" {
-				return
+	var findCalls int
+	bookRepo := &fakeBookRepo{
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Book, error) {
+			findCalls++
+			if findCalls == 1 {
+				return &model.Book{ID: id, Title: "Original"}, nil
 			}
-			queryCount++
-			if queryCount == 2 {
-				tx.AddError(errors.New("forced query error"))
-			}
-		}); err != nil {
-		t.Fatalf("failed to register query callback: %v", err)
+			return nil, errors.New("forced fetch updated error")
+		},
+		UpdateFn: func(ctx context.Context, b *model.Book) error {
+			return nil
+		},
 	}
 
-	router := setupRouter(db)
+	router := setupBookRouterWithRepo(bookRepo)
 
+	id := "550e8400-e29b-41d4-a716-446655440000"
 	payload := map[string]any{
 		"title": "New Title",
 	}
@@ -721,7 +830,7 @@ func TestUpdateBook_InternalErrorOnFetchUpdated_Returns500(t *testing.T) {
 
 	req, _ := http.NewRequest(
 		http.MethodPatch,
-		"/books/"+book.ID.String(),
+		"/books/"+id,
 		bytes.NewReader(b),
 	)
 	req.Header.Set("Content-Type", "application/json")
@@ -749,7 +858,6 @@ func TestDeleteBook_Success(t *testing.T) {
 	router := setupRouter(db)
 
 	author := seedAuthor(t, db, "Author")
-
 	book := seedBook(t, db, author, "To Delete", "Desc", nil)
 
 	req, _ := http.NewRequest(http.MethodDelete, "/books/"+book.ID.String(), nil)
@@ -808,8 +916,13 @@ func TestDeleteBook_NotFound(t *testing.T) {
 }
 
 func TestDeleteBook_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	bookRepo := &fakeBookRepo{
+		DeleteFn: func(ctx context.Context, id uuid.UUID) error {
+			return errors.New("forced delete error")
+		},
+	}
+
+	router := setupBookRouterWithRepo(bookRepo)
 
 	id := "550e8400-e29b-41d4-a716-446655440000"
 	req, _ := http.NewRequest(http.MethodDelete, "/books/"+id, nil)

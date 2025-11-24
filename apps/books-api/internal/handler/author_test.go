@@ -2,17 +2,74 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-api/internal/repository"
 	"github.com/snnyvrz/shelfshare/apps/books-api/internal/validation"
 	"gorm.io/gorm"
 )
+
+type fakeAuthorRepo struct {
+	CreateFn   func(ctx context.Context, a *model.Author) error
+	ListFn     func(ctx context.Context) ([]model.Author, error)
+	FindByIDFn func(ctx context.Context, id uuid.UUID) (*model.Author, error)
+	UpdateFn   func(ctx context.Context, a *model.Author) error
+	DeleteFn   func(ctx context.Context, id uuid.UUID) error
+}
+
+func (f *fakeAuthorRepo) Create(ctx context.Context, a *model.Author) error {
+	if f.CreateFn != nil {
+		return f.CreateFn(ctx, a)
+	}
+	return nil
+}
+
+func (f *fakeAuthorRepo) List(ctx context.Context) ([]model.Author, error) {
+	if f.ListFn != nil {
+		return f.ListFn(ctx)
+	}
+	return nil, nil
+}
+
+func (f *fakeAuthorRepo) FindByID(ctx context.Context, id uuid.UUID) (*model.Author, error) {
+	if f.FindByIDFn != nil {
+		return f.FindByIDFn(ctx, id)
+	}
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (f *fakeAuthorRepo) Update(ctx context.Context, a *model.Author) error {
+	if f.UpdateFn != nil {
+		return f.UpdateFn(ctx, a)
+	}
+	return nil
+}
+
+func (f *fakeAuthorRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	if f.DeleteFn != nil {
+		return f.DeleteFn(ctx, id)
+	}
+	return nil
+}
+
+func setupAuthorRouterWithRepo(authorRepo repository.AuthorRepository) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.Default()
+
+	h := NewAuthorHandler(authorRepo)
+	h.RegisterRoutes(r.Group(""))
+
+	return r
+}
 
 func TestCreateAuthor_Success(t *testing.T) {
 	db := setupTestDB(t)
@@ -88,8 +145,13 @@ func TestCreateAuthor_ValidationError_MissingName(t *testing.T) {
 }
 
 func TestCreateAuthor_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	authorRepo := &fakeAuthorRepo{
+		CreateFn: func(ctx context.Context, a *model.Author) error {
+			return errors.New("forced create error")
+		},
+	}
+
+	router := setupAuthorRouterWithRepo(authorRepo)
 
 	body := CreateAuthorRequest{
 		Name: "Error Author",
@@ -189,8 +251,13 @@ func TestListAuthors_WithData(t *testing.T) {
 }
 
 func TestListAuthors_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	authorRepo := &fakeAuthorRepo{
+		ListFn: func(ctx context.Context) ([]model.Author, error) {
+			return nil, errors.New("forced list error")
+		},
+	}
+
+	router := setupAuthorRouterWithRepo(authorRepo)
 
 	req, _ := http.NewRequest(http.MethodGet, "/authors", nil)
 	w := httptest.NewRecorder()
@@ -207,6 +274,43 @@ func TestListAuthors_InternalError_Returns500(t *testing.T) {
 	}
 	if resp.Message != "failed to list authors" {
 		t.Errorf("expected message %q, got %q", "failed to list authors", resp.Message)
+	}
+}
+
+func TestAuthorResponse_IncludesPublishedAtInBookSummary(t *testing.T) {
+	db := setupTestDB(t)
+	router := setupRouter(db)
+
+	author := seedAuthor(t, db, "Evans")
+
+	pub := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	seedBook(t, db, author, "DDD", "Blue Book", &pub)
+
+	req, _ := http.NewRequest(http.MethodGet, "/authors/"+author.ID.String(), nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d, body=%s", w.Code, w.Body.String())
+	}
+
+	var resp AuthorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if len(resp.Books) != 1 {
+		t.Fatalf("expected 1 book, got %d", len(resp.Books))
+	}
+
+	if resp.Books[0].PublishedAt == nil {
+		t.Fatalf("expected PublishedAt to be non-nil, got nil")
+	}
+
+	got := resp.Books[0].PublishedAt.Time.Format("2006-01-02")
+	if got != "2020-01-01" {
+		t.Errorf("expected PublishedAt 2020-01-01, got %s", got)
 	}
 }
 
@@ -234,6 +338,37 @@ func TestGetAuthorByID_Success(t *testing.T) {
 	}
 	if resp.Name != author.Name {
 		t.Errorf("expected name %q, got %q", author.Name, resp.Name)
+	}
+}
+
+func TestGetAuthorByID_WithBooks(t *testing.T) {
+	db := setupTestDB(t)
+	router := setupRouter(db)
+
+	author := seedAuthor(t, db, "Evans")
+
+	// Seed a book for this author
+	seedBook(t, db, author, "Clean Code", "A book", nil)
+
+	req, _ := http.NewRequest(http.MethodGet, "/authors/"+author.ID.String(), nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d, body=%s", w.Code, w.Body.String())
+	}
+
+	var resp AuthorResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+
+	if len(resp.Books) != 1 {
+		t.Fatalf("expected 1 book, got %d", len(resp.Books))
+	}
+
+	if resp.Books[0].Title != "Clean Code" {
+		t.Errorf("expected book title Clean Code, got %q", resp.Books[0].Title)
 	}
 }
 
@@ -276,8 +411,13 @@ func TestGetAuthorByID_NotFound(t *testing.T) {
 }
 
 func TestGetAuthorByID_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	authorRepo := &fakeAuthorRepo{
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Author, error) {
+			return nil, errors.New("forced fetch error")
+		},
+	}
+
+	router := setupAuthorRouterWithRepo(authorRepo)
 
 	id := "550e8400-e29b-41d4-a716-446655440000"
 	req, _ := http.NewRequest(http.MethodGet, "/authors/"+id, nil)
@@ -441,8 +581,13 @@ func TestUpdateAuthor_ValidationError_InvalidName(t *testing.T) {
 }
 
 func TestUpdateAuthor_InternalErrorOnFetch_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	authorRepo := &fakeAuthorRepo{
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Author, error) {
+			return nil, errors.New("forced fetch error")
+		},
+	}
+
+	router := setupAuthorRouterWithRepo(authorRepo)
 
 	id := "550e8400-e29b-41d4-a716-446655440000"
 	payload := map[string]any{
@@ -471,22 +616,18 @@ func TestUpdateAuthor_InternalErrorOnFetch_Returns500(t *testing.T) {
 }
 
 func TestUpdateAuthor_InternalErrorOnSave_Returns500(t *testing.T) {
-	db := setupTestDB(t)
-
-	author := seedAuthor(t, db, "Original")
-
-	if err := db.Callback().Update().
-		Before("gorm:before_update").
-		Register("force_author_update_error", func(tx *gorm.DB) {
-			if tx.Statement.Table == "authors" {
-				tx.AddError(errors.New("forced update error"))
-			}
-		}); err != nil {
-		t.Fatalf("failed to register update callback: %v", err)
+	authorRepo := &fakeAuthorRepo{
+		FindByIDFn: func(ctx context.Context, id uuid.UUID) (*model.Author, error) {
+			return &model.Author{ID: id, Name: "Original"}, nil
+		},
+		UpdateFn: func(ctx context.Context, a *model.Author) error {
+			return errors.New("forced update error")
+		},
 	}
 
-	router := setupRouter(db)
+	router := setupAuthorRouterWithRepo(authorRepo)
 
+	id := "550e8400-e29b-41d4-a716-446655440000"
 	payload := map[string]any{
 		"name": "New Name",
 	}
@@ -494,7 +635,7 @@ func TestUpdateAuthor_InternalErrorOnSave_Returns500(t *testing.T) {
 
 	req, _ := http.NewRequest(
 		http.MethodPatch,
-		"/authors/"+author.ID.String(),
+		"/authors/"+id,
 		bytes.NewReader(b),
 	)
 	req.Header.Set("Content-Type", "application/json")
@@ -579,8 +720,13 @@ func TestDeleteAuthor_NotFound(t *testing.T) {
 }
 
 func TestDeleteAuthor_InternalError_Returns500(t *testing.T) {
-	db := setupErrorDB(t)
-	router := setupRouter(db)
+	authorRepo := &fakeAuthorRepo{
+		DeleteFn: func(ctx context.Context, id uuid.UUID) error {
+			return errors.New("forced delete error")
+		},
+	}
+
+	router := setupAuthorRouterWithRepo(authorRepo)
 
 	id := "550e8400-e29b-41d4-a716-446655440000"
 	req, _ := http.NewRequest(http.MethodDelete, "/authors/"+id, nil)

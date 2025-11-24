@@ -51,9 +51,24 @@ func (r *GormBookRepository) List(ctx context.Context) ([]model.Book, error) {
 }
 
 func (r *GormBookRepository) Update(ctx context.Context, book *model.Book) error {
-	return r.db.WithContext(ctx).Save(book).Error
+	return r.db.WithContext(ctx).
+		Model(&model.Book{}).
+		Where("id = ?", book.ID).
+		Updates(map[string]any{
+			"title":        book.Title,
+			"description":  book.Description,
+			"author_id":    book.AuthorID,
+			"published_at": book.PublishedAt,
+		}).Error
 }
 
 func (r *GormBookRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	return r.db.WithContext(ctx).Delete(&model.Book{}, "id = ?", id).Error
+	result := r.db.WithContext(ctx).Delete(&model.Book{}, "id = ?", id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
