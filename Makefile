@@ -1,13 +1,13 @@
 .ONESHELL:
 SHELL := /bin/bash
 
-.PHONY: dev infra-up infra-down logs
+.PHONY: books-dev books-infra-up infra-down logs
 
-dev:
-	set -e
+books-dev:
+	@set -e
 
 	echo "Starting infra..."
-	docker compose --env-file .env -f infra/docker-compose.infra.yml up -d
+	docker compose --env-file .env -f infra/docker-compose.infra.yml up -d postgres
 
 	cleanup() {
 		echo ""
@@ -36,8 +36,15 @@ dev:
 
 	bunx nx serve books-api || true
 
-infra-up:
-	docker compose --env-file .env -f infra/docker-compose.infra.yml up -d
+books-test:
+	bunx nx test books-api
+
+books-coverage:
+	bunx nx coverage books-api
+	nohup xdg-open apps/books-api/coverage/coverage.html >/dev/null 2>&1 & echo "" || true
+
+books-infra-up:
+	docker compose --env-file .env -f infra/docker-compose.infra.yml up -d postgres
 
 infra-down:
 	docker compose --env-file .env -f infra/docker-compose.infra.yml down

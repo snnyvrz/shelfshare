@@ -19,9 +19,26 @@
         "swagger": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "go run github.com/swaggo/swag/cmd/swag@latest init -g cmd/server/main.go -o internal/docs",
+                "command": "go run github.com/swaggo/swag/cmd/swag@latest init -d cmd/server -o internal/docs",
                 "cwd": "apps/books-api"
             }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "go test -coverprofile=coverage/coverage.out ./...",
+                "cwd": "apps/books-api"
+            },
+            "cache": false
+        },
+        "coverage": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "go tool cover -html=coverage/coverage.out -o coverage/coverage.html",
+                "cwd": "apps/books-api"
+            },
+            "dependsOn": ["test"],
+            "cache": false
         }
     }
 }
