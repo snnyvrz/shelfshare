@@ -1,9 +1,10 @@
 name: Deploy ShelfShare
 
 on:
-    push:
-        branches:
-            - main
+    workflow_run:
+        workflows: ["CI"]
+        types:
+            - completed
 
 permissions:
     contents: read
@@ -35,8 +36,8 @@ jobs:
             - name: Build and push books-api image
               uses: docker/build-push-action@v6
               with:
-                  context: .
-                  file: apps/books-api/Dockerfile
+                  context: ./apps/books-api
+                  file: ./apps/books-api/Dockerfile
                   push: true
                   tags: |
                       ${{ env.IMAGE_NAME }}:latest
