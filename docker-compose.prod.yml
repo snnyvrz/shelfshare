@@ -1,8 +1,6 @@
 services:
   books-api:
-    build:
-      context: ./apps/books-api
-      dockerfile: Dockerfile
+    image: ghcr.io/snnyvrz/shelfshare-books-api:latest
     env_file:
       - .env.prod
     ports:
