@@ -31,6 +31,13 @@
             },
             "cache": false
         },
+        "integration-test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "go test -tags=integration ./...",
+                "cwd": "apps/books-api"
+            }
+        },
         "coverage": {
             "executor": "nx:run-commands",
             "options": {

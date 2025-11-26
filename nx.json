@@ -1,17 +1,17 @@
 {
-  "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "nxCloudId": "6921d1187b3e9577e4f2dde9",
-  "npmScope": "shelfshare",
-  "packageManager": "bun",
-  "tasksRunnerOptions": {
-    "default": {
-      "runner": "nx/tasks-runners/default",
-      "options": {
-        "cacheableOperations": ["serve"]
-      }
+    "$schema": "./node_modules/nx/schemas/nx-schema.json",
+    "nxCloudId": "6921d1187b3e9577e4f2dde9",
+    "npmScope": "shelfshare",
+    "packageManager": "bun",
+    "tasksRunnerOptions": {
+        "default": {
+            "runner": "nx/tasks-runners/default",
+            "options": {
+                "cacheableOperations": ["test", "build", "swagger"]
+            }
+        }
+    },
+    "projects": {
+        "books-api": "apps/books-api"
     }
-  },
-  "projects": {
-    "books-api": "apps/books-api"
-  }
 }
