@@ -13,8 +13,9 @@ services:
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=duckdns"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53"
 
     ports:
       - "80:80"
@@ -25,6 +26,9 @@ services:
     networks:
       - web
     restart: unless-stopped
+    environment:
+      DUCKDNS_TOKEN: "${DUCKDNS_TOKEN}"
+
 
   books-api:
     image: ghcr.io/snnyvrz/shelfshare-books-api:latest
