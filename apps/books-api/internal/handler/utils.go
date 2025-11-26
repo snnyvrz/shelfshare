@@ -69,24 +69,22 @@ func toBookResponse(b model.Book) BookResponse {
 		pub = &model.Date{Time: *b.PublishedAt}
 	}
 
-	return BookResponse{
+	data := Book{
 		ID:    b.ID,
 		Title: b.Title,
-		Author: AuthorResponse{
+		Author: AuthorSummary{
 			ID:   b.Author.ID,
 			Name: b.Author.Name,
 			Bio:  b.Author.Bio,
-			CreatedAt: model.Date{
-				Time: b.Author.CreatedAt,
-			},
-			UpdatedAt: model.Date{
-				Time: b.Author.UpdatedAt,
-			},
 		},
 		Description: b.Description,
 		PublishedAt: pub,
 		CreatedAt:   model.Date{Time: b.CreatedAt},
 		UpdatedAt:   model.Date{Time: b.UpdatedAt},
+	}
+
+	return BookResponse{
+		Data: data,
 	}
 }
 
@@ -96,7 +94,7 @@ func toBookSummaryResponse(b model.Book) BookSummaryResponse {
 		pub = &model.Date{Time: *b.PublishedAt}
 	}
 
-	return BookSummaryResponse{
+	data := BookSummary{
 		ID:          b.ID,
 		Title:       b.Title,
 		Description: b.Description,
@@ -104,9 +102,13 @@ func toBookSummaryResponse(b model.Book) BookSummaryResponse {
 		CreatedAt:   model.Date{Time: b.CreatedAt},
 		UpdatedAt:   model.Date{Time: b.UpdatedAt},
 	}
+
+	return BookSummaryResponse{
+		Data: data,
+	}
 }
 
-func toListBooksResponse(br []BookResponse, page, pageSize int, total int64, totalPages int) ListBooksResponse {
+func toListBooksResponse(br []Book, page, pageSize int, total int64, totalPages int) ListBooksResponse {
 	return ListBooksResponse{
 		Data: br,
 		Pagination: Pagination{

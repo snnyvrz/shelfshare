@@ -19,23 +19,31 @@ type UpdateBookRequest struct {
 	PublishedAt *model.Date `json:"published_at" swaggertype:"string" example:"2025-11-24"`
 }
 
-type BookResponse struct {
-	ID          uuid.UUID      `json:"id"`
-	Title       string         `json:"title"`
-	Author      AuthorResponse `json:"author"`
-	Description string         `json:"description"`
-	PublishedAt *model.Date    `json:"published_at,omitempty" swaggertype:"string" example:"2025-11-24"`
-	CreatedAt   model.Date     `json:"created_at" swaggertype:"string" example:"2025-11-24"`
-	UpdatedAt   model.Date     `json:"updated_at" swaggertype:"string" example:"2025-11-24"`
+type Book struct {
+	ID          uuid.UUID     `json:"id"`
+	Title       string        `json:"title"`
+	Author      AuthorSummary `json:"author"`
+	Description string        `json:"description"`
+	PublishedAt *model.Date   `json:"published_at,omitempty" swaggertype:"string" example:"2025-11-24"`
+	CreatedAt   model.Date    `json:"created_at" swaggertype:"string" example:"2025-11-24"`
+	UpdatedAt   model.Date    `json:"updated_at" swaggertype:"string" example:"2025-11-24"`
 }
 
-type BookSummaryResponse struct {
+type BookResponse struct {
+	Data Book `json:"data"`
+}
+
+type BookSummary struct {
 	ID          uuid.UUID   `json:"id"`
 	Title       string      `json:"title"`
 	Description string      `json:"description"`
 	PublishedAt *model.Date `json:"published_at,omitempty" swaggertype:"string" example:"2025-11-24"`
 	CreatedAt   model.Date  `json:"created_at" swaggertype:"string" example:"2025-11-24"`
 	UpdatedAt   model.Date  `json:"updated_at" swaggertype:"string" example:"2025-11-24"`
+}
+
+type BookSummaryResponse struct {
+	Data BookSummary `json:"data"`
 }
 
 type Pagination struct {
@@ -46,6 +54,6 @@ type Pagination struct {
 }
 
 type ListBooksResponse struct {
-	Data       []BookResponse `json:"data"`
-	Pagination Pagination     `json:"pagination"`
+	Data       []Book     `json:"data"`
+	Pagination Pagination `json:"pagination"`
 }

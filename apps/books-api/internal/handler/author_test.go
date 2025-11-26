@@ -101,18 +101,18 @@ func TestCreateAuthor_Success(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.ID == uuid.Nil {
+	if resp.Data.ID == uuid.Nil {
 		t.Errorf("expected non-empty ID")
 	}
-	if resp.Name != body.Name {
-		t.Errorf("expected name %q, got %q", body.Name, resp.Name)
+	if resp.Data.Name != body.Name {
+		t.Errorf("expected name %q, got %q", body.Name, resp.Data.Name)
 	}
-	if resp.Bio != body.Bio {
-		t.Errorf("expected bio %q, got %q", body.Bio, resp.Bio)
+	if resp.Data.Bio != body.Bio {
+		t.Errorf("expected bio %q, got %q", body.Bio, resp.Data.Bio)
 	}
 
 	var stored model.Author
-	if err := db.First(&stored, "id = ?", resp.ID).Error; err != nil {
+	if err := db.First(&stored, "id = ?", resp.Data.ID).Error; err != nil {
 		t.Fatalf("expected author in db, got error: %v", err)
 	}
 
@@ -232,16 +232,16 @@ func TestListAuthors_WithData(t *testing.T) {
 	found2 := false
 
 	for _, a := range resp {
-		switch a.ID {
+		switch a.Data.ID {
 		case author1.ID:
 			found1 = true
-			if a.Name != author1.Name {
-				t.Errorf("expected author1 name %q, got %q", author1.Name, a.Name)
+			if a.Data.Name != author1.Name {
+				t.Errorf("expected author1 name %q, got %q", author1.Name, a.Data.Name)
 			}
 		case author2.ID:
 			found2 = true
-			if a.Name != author2.Name {
-				t.Errorf("expected author2 name %q, got %q", author2.Name, a.Name)
+			if a.Data.Name != author2.Name {
+				t.Errorf("expected author2 name %q, got %q", author2.Name, a.Data.Name)
 			}
 		}
 	}
@@ -301,15 +301,15 @@ func TestAuthorResponse_IncludesPublishedAtInBookSummary(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if len(resp.Books) != 1 {
-		t.Fatalf("expected 1 book, got %d", len(resp.Books))
+	if len(resp.Data.Books) != 1 {
+		t.Fatalf("expected 1 book, got %d", len(resp.Data.Books))
 	}
 
-	if resp.Books[0].PublishedAt == nil {
+	if resp.Data.Books[0].PublishedAt == nil {
 		t.Fatalf("expected PublishedAt to be non-nil, got nil")
 	}
 
-	got := resp.Books[0].PublishedAt.Time.Format("2006-01-02")
+	got := resp.Data.Books[0].PublishedAt.Time.Format("2006-01-02")
 	if got != "2020-01-01" {
 		t.Errorf("expected PublishedAt 2020-01-01, got %s", got)
 	}
@@ -334,11 +334,11 @@ func TestGetAuthorByID_Success(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.ID != author.ID {
-		t.Errorf("expected id %s, got %s", author.ID, resp.ID)
+	if resp.Data.ID != author.ID {
+		t.Errorf("expected id %s, got %s", author.ID, resp.Data.ID)
 	}
-	if resp.Name != author.Name {
-		t.Errorf("expected name %q, got %q", author.Name, resp.Name)
+	if resp.Data.Name != author.Name {
+		t.Errorf("expected name %q, got %q", author.Name, resp.Data.Name)
 	}
 }
 
@@ -348,7 +348,6 @@ func TestGetAuthorByID_WithBooks(t *testing.T) {
 
 	author := testutil.SeedAuthor(t, db, "Evans")
 
-	// Seed a book for this author
 	testutil.SeedBook(t, db, author, "Clean Code", "A book", nil)
 
 	req, _ := http.NewRequest(http.MethodGet, "/authors/"+author.ID.String(), nil)
@@ -364,12 +363,12 @@ func TestGetAuthorByID_WithBooks(t *testing.T) {
 		t.Fatalf("failed to unmarshal: %v", err)
 	}
 
-	if len(resp.Books) != 1 {
-		t.Fatalf("expected 1 book, got %d", len(resp.Books))
+	if len(resp.Data.Books) != 1 {
+		t.Fatalf("expected 1 book, got %d", len(resp.Data.Books))
 	}
 
-	if resp.Books[0].Title != "Clean Code" {
-		t.Errorf("expected book title Clean Code, got %q", resp.Books[0].Title)
+	if resp.Data.Books[0].Title != "Clean Code" {
+		t.Errorf("expected book title Clean Code, got %q", resp.Data.Books[0].Title)
 	}
 }
 
@@ -471,11 +470,11 @@ func TestUpdateAuthor_Success(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.Name != "New Name" {
-		t.Errorf("expected updated name, got %q", resp.Name)
+	if resp.Data.Name != "New Name" {
+		t.Errorf("expected updated name, got %q", resp.Data.Name)
 	}
-	if resp.Bio != "New Bio" {
-		t.Errorf("expected updated bio, got %q", resp.Bio)
+	if resp.Data.Bio != "New Bio" {
+		t.Errorf("expected updated bio, got %q", resp.Data.Bio)
 	}
 
 	var stored model.Author

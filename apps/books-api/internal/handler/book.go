@@ -175,9 +175,9 @@ func (h *BookHandler) ListBooks(c *gin.Context) {
 		return
 	}
 
-	responses := make([]BookResponse, 0, len(result.Books))
+	responses := make([]Book, 0, len(result.Books))
 	for _, b := range result.Books {
-		responses = append(responses, toBookResponse(b))
+		responses = append(responses, toBookResponse(b).Data)
 	}
 
 	totalPages := 0

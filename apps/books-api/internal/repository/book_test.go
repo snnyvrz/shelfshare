@@ -99,7 +99,7 @@ func TestGormBookRepository_List_SearchAndSortAndPagination(t *testing.T) {
 		Page:     1,
 		PageSize: 10,
 		Sort:     "title_asc",
-		Query:    "Clean", // should match two books
+		Query:    "Clean",
 	}
 
 	result, err := repo.List(ctx, params)
@@ -115,7 +115,6 @@ func TestGormBookRepository_List_SearchAndSortAndPagination(t *testing.T) {
 		t.Fatalf("expected 2 books, got %d", len(result.Books))
 	}
 
-	// sorted by title ascending: "Clean Architecture", "Clean Code"
 	if result.Books[0].Title != "Clean Architecture" || result.Books[1].Title != "Clean Code" {
 		t.Fatalf("unexpected order: got [%s, %s]",
 			result.Books[0].Title,
@@ -131,7 +130,6 @@ func TestGormBookRepository_List_FilterByAuthorAndPagination(t *testing.T) {
 	_, author2 := seedBooks(t, db)
 	ctx := context.Background()
 
-	// Only author2's books, but small page size to check pagination
 	params := BookListParams{
 		Page:     1,
 		PageSize: 1,

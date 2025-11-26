@@ -104,26 +104,26 @@ func TestCreateBook_Success(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.ID == uuid.Nil {
+	if resp.Data.ID == uuid.Nil {
 		t.Errorf("expected non-empty ID")
 	}
-	if resp.Title != body.Title {
-		t.Errorf("expected title %q, got %q", body.Title, resp.Title)
+	if resp.Data.Title != body.Title {
+		t.Errorf("expected title %q, got %q", body.Title, resp.Data.Title)
 	}
 
-	if resp.Author.ID != author.ID {
-		t.Errorf("expected author ID %q, got %q", author.ID, resp.Author.ID)
+	if resp.Data.Author.ID != author.ID {
+		t.Errorf("expected author ID %q, got %q", author.ID, resp.Data.Author.ID)
 	}
-	if resp.Author.Name != author.Name {
-		t.Errorf("expected author name %q, got %q", author.Name, resp.Author.Name)
+	if resp.Data.Author.Name != author.Name {
+		t.Errorf("expected author name %q, got %q", author.Name, resp.Data.Author.Name)
 	}
 
-	if resp.PublishedAt != nil {
+	if resp.Data.PublishedAt != nil {
 		t.Errorf("expected PublishedAt to be nil when not provided")
 	}
 
 	var stored model.Book
-	if err := db.First(&stored, "id = ?", resp.ID).Error; err != nil {
+	if err := db.First(&stored, "id = ?", resp.Data.ID).Error; err != nil {
 		t.Fatalf("expected book in db, got error: %v", err)
 	}
 
@@ -165,15 +165,15 @@ func TestCreateBook_SuccessWithPublishedAt(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.PublishedAt == nil {
+	if resp.Data.PublishedAt == nil {
 		t.Fatalf("expected PublishedAt to be non-nil")
 	}
-	if got := resp.PublishedAt.Time.Format("2006-01-02"); got != "2020-01-01" {
+	if got := resp.Data.PublishedAt.Time.Format("2006-01-02"); got != "2020-01-01" {
 		t.Errorf("expected PublishedAt 2020-01-01, got %s", got)
 	}
 
 	var stored model.Book
-	if err := db.First(&stored, "id = ?", resp.ID).Error; err != nil {
+	if err := db.First(&stored, "id = ?", resp.Data.ID).Error; err != nil {
 		t.Fatalf("expected book in db, got error: %v", err)
 	}
 	if stored.PublishedAt == nil || stored.PublishedAt.Format("2006-01-02") != "2020-01-01" {
@@ -412,18 +412,18 @@ func TestGetBookByID_Success(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.ID != book.ID {
-		t.Errorf("expected id %s, got %s", book.ID, resp.ID)
+	if resp.Data.ID != book.ID {
+		t.Errorf("expected id %s, got %s", book.ID, resp.Data.ID)
 	}
-	if resp.Title != book.Title {
-		t.Errorf("expected title %q, got %q", book.Title, resp.Title)
+	if resp.Data.Title != book.Title {
+		t.Errorf("expected title %q, got %q", book.Title, resp.Data.Title)
 	}
 
-	if resp.Author.ID != author.ID {
-		t.Errorf("expected author id %s, got %s", author.ID, resp.Author.ID)
+	if resp.Data.Author.ID != author.ID {
+		t.Errorf("expected author id %s, got %s", author.ID, resp.Data.Author.ID)
 	}
-	if resp.Author.Name != author.Name {
-		t.Errorf("expected author name %q, got %q", author.Name, resp.Author.Name)
+	if resp.Data.Author.Name != author.Name {
+		t.Errorf("expected author name %q, got %q", author.Name, resp.Data.Author.Name)
 	}
 }
 
@@ -526,20 +526,20 @@ func TestUpdateBook_Success(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.Title != "New Title" {
-		t.Errorf("expected updated title, got %q", resp.Title)
+	if resp.Data.Title != "New Title" {
+		t.Errorf("expected updated title, got %q", resp.Data.Title)
 	}
-	if resp.Description != "New Desc" {
-		t.Errorf("expected updated description, got %q", resp.Description)
+	if resp.Data.Description != "New Desc" {
+		t.Errorf("expected updated description, got %q", resp.Data.Description)
 	}
-	if resp.Author.ID != newAuthor.ID {
-		t.Errorf("expected author ID %s, got %s", newAuthor.ID, resp.Author.ID)
+	if resp.Data.Author.ID != newAuthor.ID {
+		t.Errorf("expected author ID %s, got %s", newAuthor.ID, resp.Data.Author.ID)
 	}
-	if resp.Author.Name != newAuthor.Name {
-		t.Errorf("expected author name %q, got %q", newAuthor.Name, resp.Author.Name)
+	if resp.Data.Author.Name != newAuthor.Name {
+		t.Errorf("expected author name %q, got %q", newAuthor.Name, resp.Data.Author.Name)
 	}
-	if resp.PublishedAt == nil || resp.PublishedAt.Time.Format("2006-01-02") != "2020-01-01" {
-		t.Errorf("expected PublishedAt 2020-01-01, got %+v", resp.PublishedAt)
+	if resp.Data.PublishedAt == nil || resp.Data.PublishedAt.Time.Format("2006-01-02") != "2020-01-01" {
+		t.Errorf("expected PublishedAt 2020-01-01, got %+v", resp.Data.PublishedAt)
 	}
 
 	var stored model.Book
@@ -712,8 +712,8 @@ func TestUpdateBook_ClearPublishedAt_WhenZeroDate(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if resp.PublishedAt != nil {
-		t.Errorf("expected PublishedAt to be nil in response, got %v", resp.PublishedAt)
+	if resp.Data.PublishedAt != nil {
+		t.Errorf("expected PublishedAt to be nil in response, got %v", resp.Data.PublishedAt)
 	}
 
 	var stored model.Book

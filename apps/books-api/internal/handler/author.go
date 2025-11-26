@@ -20,25 +20,6 @@ func NewAuthorHandler(repo repository.AuthorRepository) *AuthorHandler {
 	return &AuthorHandler{repo: repo}
 }
 
-type CreateAuthorRequest struct {
-	Name string `json:"name" binding:"required,min=1"`
-	Bio  string `json:"bio" binding:"omitempty,max=2000"`
-}
-
-type UpdateAuthorRequest struct {
-	Name *string `json:"name" binding:"omitempty,min=1"`
-	Bio  *string `json:"bio" binding:"omitempty,max=2000"`
-}
-
-type AuthorResponse struct {
-	ID        uuid.UUID             `json:"id"`
-	Name      string                `json:"name"`
-	Bio       string                `json:"bio"`
-	Books     []BookSummaryResponse `json:"books,omitempty"`
-	CreatedAt model.Date            `json:"created_at" swaggertype:"string" example:"2025-11-24"`
-	UpdatedAt model.Date            `json:"updated_at" swaggertype:"string" example:"2025-11-24"`
-}
-
 func (h *AuthorHandler) RegisterRoutes(r *gin.RouterGroup) {
 	authors := r.Group("/authors")
 	{
@@ -51,12 +32,12 @@ func (h *AuthorHandler) RegisterRoutes(r *gin.RouterGroup) {
 }
 
 func toAuthorResponse(a model.Author) AuthorResponse {
-	books := make([]BookSummaryResponse, 0, len(a.Books))
+	books := make([]BookSummary, 0, len(a.Books))
 	for _, b := range a.Books {
-		books = append(books, toBookSummaryResponse(b))
+		books = append(books, toBookSummaryResponse(b).Data)
 	}
 
-	return AuthorResponse{
+	data := Author{
 		ID:        a.ID,
 		Name:      a.Name,
 		Bio:       a.Bio,
@@ -64,6 +45,8 @@ func toAuthorResponse(a model.Author) AuthorResponse {
 		CreatedAt: model.Date{Time: a.CreatedAt},
 		UpdatedAt: model.Date{Time: a.UpdatedAt},
 	}
+
+	return AuthorResponse{Data: data}
 }
 
 // CreateAuthor godoc
