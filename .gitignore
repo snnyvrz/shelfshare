@@ -10,6 +10,7 @@ coverage/
 docs/
 
 .env
+.env.localprod
 .env.prod
 
 .nx/cache
