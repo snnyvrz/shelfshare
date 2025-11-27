@@ -27,11 +27,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	DBHost := os.Getenv("DB_HOST")
-	DBPort := os.Getenv("DB_PORT")
-	DBUser := os.Getenv("DB_USER")
-	DBPass := os.Getenv("DB_PASS")
-	DBName := os.Getenv("DB_NAME")
+	DBHost := os.Getenv("POSTGRES_HOST")
+	DBPort := os.Getenv("POSTGRES_PORT")
+	DBUser := os.Getenv("POSTGRES_USER")
+	DBPass := os.Getenv("POSTGRES_PASSWORD")
+	DBName := os.Getenv("POSTGRES_DB")
 	DBSSLMode := "disable"
 	TZ := os.Getenv("TZ")
 

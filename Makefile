@@ -71,10 +71,10 @@ books-integration-test:
 	echo "Running books-api integration tests..."
 	set -a; . $(ENV_TEST); set +a;
 
-	docker exec $(POSTGRES_CONTAINER) psql -U $$DB_USER -d postgres \
-		-tc "SELECT 1 FROM pg_database WHERE datname = '$$DB_NAME'" | grep -q 1 || \
-	docker exec $(POSTGRES_CONTAINER) psql -U $$DB_USER -d postgres \
-		-c "CREATE DATABASE $$DB_NAME"
+	docker exec $(POSTGRES_CONTAINER) psql -U $$POSTGRES_USER -d postgres \
+		-tc "SELECT 1 FROM pg_database WHERE datname = '$$POSTGRES_DB'" | grep -q 1 || \
+	docker exec $(POSTGRES_CONTAINER) psql -U $$POSTGRES_USER -d postgres \
+		-c "CREATE DATABASE $$POSTGRES_DB"
 
 	bunx nx integration-test books-api
 
