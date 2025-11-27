@@ -25,11 +25,11 @@ func Load() *Config {
 	cfg := &Config{
 		GinMode:   getenv("GIN_MODE", "debug"),
 		TZ:        getenv("TZ", "UTC"),
-		DBHost:    getenv("DB_HOST", "localhost"),
-		DBPort:    getenv("DB_PORT", "5432"),
-		DBUser:    getenv("DB_USER", "postgres"),
-		DBPass:    getenv("DB_PASS", ""),
-		DBName:    getenv("DB_NAME", "postgres"),
+		DBHost:    getenv("POSTGRES_HOST", "localhost"),
+		DBPort:    getenv("POSTGRES_PORT", "5432"),
+		DBUser:    getenv("POSTGRES_USER", "postgres"),
+		DBPass:    getenv("POSTGRES_PASSWORD", ""),
+		DBName:    getenv("POSTGRES_DB", "postgres"),
 		DBSSLMode: "disable",
 	}
 
