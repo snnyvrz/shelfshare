@@ -21,5 +21,27 @@ services:
         volumes:
             - shelfshare_pg_data:/var/lib/postgresql
 
+    mongo:
+        image: mongo:8-noble
+        container_name: shelfshare-mongo
+        restart: unless-stopped
+        environment:
+            MONGO_USERNAME: ${MONGO_USERNAME}
+            MONGO_PASSWORD: ${MONGO_PASSWORD}
+        ports:
+            - "27017:27017"
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    'mongo --username $MONGO_USERNAME --password $MONGO_PASSWORD --eval ''db.adminCommand("ping")''',
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 10
+        volumes:
+            - mongo_data:/data/db
+
 volumes:
     shelfshare_pg_data:
+    mongo_data:

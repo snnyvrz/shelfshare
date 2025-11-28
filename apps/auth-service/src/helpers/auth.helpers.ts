@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-import { User } from "@auth/types/auth.types";
+import type { User } from "@auth/types/auth.types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || 3600;
