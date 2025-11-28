@@ -32,10 +32,6 @@ func Load() *Config {
 		DBSSLMode: "disable",
 	}
 
-	if cfg.GinMode == "release" {
-		cfg.DBSSLMode = "require"
-	}
-
 	return cfg
 }
 
