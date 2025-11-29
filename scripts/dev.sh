@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/constants.sh"
 SERVICE="${1:-}"
 
 case "$SERVICE" in
-  books)
+books)
     echo "🚀 Starting books-service..."
     echo "Starting infra..."
 
@@ -23,7 +23,7 @@ case "$SERVICE" in
     bunx nx serve books-service || true
     ;;
 
-  auth)
+auth)
     echo "🔐 Starting auth-service..."
     echo "Starting infra..."
 
@@ -38,12 +38,12 @@ case "$SERVICE" in
     bun --watch src/index.ts || true
     ;;
 
-  "" )
+"")
     echo "Argument required to specify which service to run."
     echo "Usage: make dev [books|auth]"
     ;;
 
-  *)
+*)
     echo "❌ Unknown service: $SERVICE"
     echo "Usage: make dev [books|auth]"
     exit 1

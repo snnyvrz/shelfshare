@@ -51,7 +51,6 @@ wait_for_mongo() {
     done
 }
 
-
 cleanup_infra() {
     echo
     echo "Stopping infra..."

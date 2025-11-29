@@ -23,7 +23,6 @@ check_configured:
 		exit 1; \
 	fi
 
-
 endif
 
 .PHONY: help
@@ -82,11 +81,6 @@ books-coverage: check_configured
 books-coverage: ## Run books-service coverage and open report
 	bunx nx coverage books-service
 	nohup xdg-open apps/books-service/coverage/coverage.html >/dev/null 2>&1 & echo "" || true
-
-.PHONY: books-swagger
-books-swagger: check_configured
-books-swagger: ## Generate books-service Swagger docs
-	bunx nx swagger books-service
 
 .PHONY: books-integration-test
 books-integration-test: check_configured
