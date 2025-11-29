@@ -21,7 +21,36 @@ wait_for_postgres() {
             sleep 1
         fi
     done
-}   
+}
+
+wait_for_mongo() {
+    echo "Waiting for Mongo to become healthy..."
+
+    while true; do
+        status=$(docker inspect --format='{{.State.Health.Status}}' "$MONGO_CONTAINER" 2>/dev/null || echo "starting")
+
+        if [ "$status" = "healthy" ]; then
+            echo "Mongo is healthy"
+            break
+        fi
+
+        if [ "$status" = "unhealthy" ]; then
+            echo "Mongo is UNHEALTHY — check logs with 'make logs'"
+            exit 1
+        fi
+
+        if [ "$status" = "starting" ] || [ "$status" = "" ]; then
+            if docker exec "$MONGO_CONTAINER" mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+                echo "Mongo is reachable"
+                break
+            fi
+        fi
+
+        echo "Current Mongo status: $status… waiting 1s"
+        sleep 1
+    done
+}
+
 
 cleanup_infra() {
     echo

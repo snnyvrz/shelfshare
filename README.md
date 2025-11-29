@@ -11,5 +11,3 @@ Then run the configure script:
 ```sh
 ./configure
 ```
-
-This checks required tools and versions before you run any Makefile commands.

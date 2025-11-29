@@ -25,8 +25,17 @@ case "$SERVICE" in
 
   auth)
     echo "🔐 Starting auth-service..."
-    cd services/auth-service
-    bun --watch src/main.ts
+    echo "Starting infra..."
+
+    docker compose --env-file "$ENV_FILE" -f "$INFRA_COMPOSE_FILE" up -d "$MONGO_SERVICE"
+
+    trap cleanup_infra INT TERM EXIT
+
+    wait_for_mongo
+
+    echo "Starting auth-service via Nx (Ctrl+C to stop everything)..."
+    cd apps/auth-service
+    bun --watch src/index.ts || true
     ;;
 
   "" )

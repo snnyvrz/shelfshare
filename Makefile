@@ -68,18 +68,18 @@ dev: check_configured
 dev: ## Run development environment
 	./scripts/dev.sh $(filter-out $@,$(MAKECMDGOALS))
 
+.PHONY: test
+test: check_configured
+test: ## Run tests
+	./scripts/test.sh $(filter-out $@,$(MAKECMDGOALS))
+
 .PHONY: books auth
 books auth:
 	@:
 
-.PHONY: books-test
-books-test: check_configured
-books-test: ## Run books-service tests
-	bunx nx test books-service
-
 .PHONY: books-coverage
 books-coverage: check_configured
-books-coverage: ## Run books-service coverage
+books-coverage: ## Run books-service coverage and open report
 	bunx nx coverage books-service
 	nohup xdg-open apps/books-service/coverage/coverage.html >/dev/null 2>&1 & echo "" || true
 
