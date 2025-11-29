@@ -114,6 +114,19 @@ echo
 
 ok "All requirements satisfied 🎉"
 
+# -------- Install JS dependencies with bun --------
+echo
+info "Installing JavaScript dependencies with bun install..."
+
+if bun install; then
+    ok "JavaScript dependencies installed"
+else
+    err "bun install failed. Fix the issues and rerun ./configure"
+    exit 1
+fi
+
+echo
+
 # Make scripts executable
 if [ -d scripts ]; then
     echo
