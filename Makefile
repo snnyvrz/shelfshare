@@ -1,6 +1,40 @@
 .ONESHELL:
 SHELL := /bin/bash
 
+.DEFAULT_GOAL := check_configured
+
+CONFIG_STAMP := .configured
+
+.PHONY: check_configured
+ifeq ($(CI),true)
+
+check_configured:
+	@:
+
+else
+
+check_configured:
+	@if [ ! -f "$(CONFIG_STAMP)" ]; then \
+		echo "Please run the configure script before using any make commands:"; \
+		echo ""; \
+		echo "    chmod +x ./configure"; \
+		echo "    ./configure"; \
+		echo ""; \
+		exit 1; \
+	fi
+
+endif
+
+.PHONY: help
+help: check_configured
+help: ## Show the help message
+	@echo ""
+	@echo "Available make commands:"
+	@echo ""
+	@grep -E '^[a-zA-Z0-9_.-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*##"} {printf "  %-25s %s\n", $$1, $$2}'
+	@echo ""
+
+
 ENV_DEV  := .env
 ENV_TEST := .env.test
 ENV_LOCALPROD := .env.localprod
@@ -10,10 +44,6 @@ POSTGRES_SERVICE := postgres
 POSTGRES_CONTAINER := shelfshare-postgres
 
 DC = docker compose --env-file $(ENV_FILE) $(INFRA_COMPOSE)
-
-.PHONY: \
-	books-dev books-test books-coverage books-swagger books-integration-test \
-	books-infra-up infra-down logs books-localprod
 
 define wait_for_postgres
 	@echo "Waiting for Postgres to become healthy..."
@@ -32,36 +62,30 @@ define wait_for_postgres
 	done
 endef
 
-books-dev: ENV_FILE=$(ENV_DEV)
-books-dev:
-	@set -e
-	echo "Starting infra..."
-	$(DC) up -d $(POSTGRES_SERVICE)
+.PHONY: dev
+dev: check_configured
+dev: ## Run development environment
+	./scripts/dev.sh $(filter-out $@,$(MAKECMDGOALS))
 
-	cleanup() {
-		echo ""
-		echo "Stopping infra..."
-		$(DC) down
-	}
-	trap cleanup INT TERM EXIT
+.PHONY: test
+test: check_configured
+test: ## Run tests
+	./scripts/test.sh $(filter-out $@,$(MAKECMDGOALS))
 
-	$(call wait_for_postgres)
+.PHONY: books auth
+books auth:
+	@:
 
-	echo "Starting books-service via Nx (Ctrl+C to stop everything)..."
-	bunx nx serve books-service || true
-
-books-test:
-	bunx nx test books-service
-
-books-coverage:
+.PHONY: books-coverage
+books-coverage: check_configured
+books-coverage: ## Run books-service coverage and open report
 	bunx nx coverage books-service
 	nohup xdg-open apps/books-service/coverage/coverage.html >/dev/null 2>&1 & echo "" || true
 
-books-swagger:
-	bunx nx swagger books-service
-
+.PHONY: books-integration-test
+books-integration-test: check_configured
 books-integration-test: ENV_FILE=$(ENV_TEST)
-books-integration-test:
+books-integration-test: ## Run books-service integration tests with infra
 	@set -e
 	echo "Starting infra..."
 	$(DC) up -d $(POSTGRES_SERVICE)
@@ -82,19 +106,27 @@ books-integration-test:
 	echo "Stopping infra..."
 	$(DC) down
 
+.PHONY: books-infra-up
+books-infra-up: check_configured
 books-infra-up: ENV_FILE=$(ENV_DEV)
-books-infra-up:
+books-infra-up: ## Start only the infra services (Postgres)
 	$(DC) up -d $(POSTGRES_SERVICE)
 
+.PHONY: infra-down
+infra-down: check_configured
 infra-down: ENV_FILE=$(ENV_DEV)
-infra-down:
+infra-down: ## Stop infra services
 	$(DC) down
 
+.PHONY: logs
+logs: check_configured
 logs: ENV_FILE=$(ENV_DEV)
-logs:
+logs: ## Show logs for infra services
 	$(DC) logs -f
 
-books-localprod:
+.PHONY: books-localprod
+books-localprod: check_configured
+books-localprod: ## Run local production stack (Postgres + books-api)
 	@set -e
 	echo "Starting localprod stack (Postgres + books-api)..."
 
@@ -110,3 +142,17 @@ books-localprod:
 	docker compose --env-file $(ENV_LOCALPROD) \
 		-f docker-compose.localprod.yml \
 		up --build
+
+.PHONY: configure-force
+configure-force: ## Force re-running the configure script
+	@rm -f $(CONFIG_STAMP)
+	@./configure
+
+.PHONY: %
+%: check_configured
+%:
+	@echo ""
+	@echo "Unknown command: '$@'"
+	@echo ""
+	@$(MAKE) --no-print-directory help
+	@exit 1

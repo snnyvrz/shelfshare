@@ -1,0 +1,227 @@
+#!/usr/bin/env sh
+
+# ========= colors =========
+if [ -t 1 ]; then
+    RED="$(printf '\033[31m')"
+    GREEN="$(printf '\033[32m')"
+    YELLOW="$(printf '\033[33m')"
+    BLUE="$(printf '\033[34m')"
+    BOLD="$(printf '\033[1m')"
+    RESET="$(printf '\033[0m')"
+else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    BLUE=""
+    BOLD=""
+    RESET=""
+fi
+
+ok() { printf "%s[OK]%s %s\n" "$GREEN" "$RESET" "$1"; }
+err() { printf "%s[ERR]%s %s\n" "$RED" "$RESET" "$1" >&2; }
+info() { printf "%s[INFO]%s %s\n" "$BLUE" "$RESET" "$1"; }
+warn() { printf "%s[WARN]%s %s\n" "$YELLOW" "$RESET" "$1"; }
+
+# ========= Required Versions =========
+REQUIRED_GO="1.25.4"
+REQUIRED_AIR="1.63.0"
+REQUIRED_SHFMT="3.12.0"
+REQUIRED_BUN="1.3.3"
+REQUIRED_DOCKER="28.4.0"
+
+# ========= version compare: v1 >= v2 ? =========
+version_ge() {
+    IFS=. read -r a b c <<EOF
+$1
+EOF
+    IFS=. read -r x y z <<EOF
+$2
+EOF
+
+    a=${a:-0}
+    b=${b:-0}
+    c=${c:-0}
+    x=${x:-0}
+    y=${y:-0}
+    z=${z:-0}
+
+    if [ "$a" -gt "$x" ]; then return 0; fi
+    if [ "$a" -lt "$x" ]; then return 1; fi
+
+    if [ "$b" -gt "$y" ]; then return 0; fi
+    if [ "$b" -lt "$y" ]; then return 1; fi
+
+    if [ "$c" -ge "$z" ]; then return 0; fi
+    return 1
+}
+
+# ========= helper: install go pkg =========
+install_go_pkg() {
+    tool="$1"
+    pkg="$2"
+
+    echo
+    info "Installing $tool using 'go install $pkg@latest'..."
+
+    if go install "$pkg@latest"; then
+        ok "$tool installed successfully"
+    else
+        err "Failed to install $tool"
+        exit 1
+    fi
+}
+
+# ========= helper: install URL hints =========
+tool_install_hint() {
+    case "$1" in
+        go)
+            echo "  Install Go: https://go.dev/doc/install"
+            ;;
+        air)
+            echo "  Install air: https://github.com/air-verse/air#installation"
+            ;;
+        shfmt)
+            echo "  Install shfmt: https://github.com/mvdan/sh#shfmt"
+            ;;
+        bun)
+            echo "  Install Bun: https://bun.sh/docs/installation"
+            ;;
+        docker)
+            echo "  Install Docker: https://docs.docker.com/get-docker/"
+            ;;
+        *)
+            echo "  Please install '$1' from its official website."
+            ;;
+    esac
+}
+
+# ========= helper: require command =========
+require_cmd() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        err "Missing required tool: $1"
+        tool_install_hint "$1"
+        exit 1
+    else
+        ok "$1 found ($(command -v "$1"))"
+    fi
+}
+
+echo
+printf "%s== %sShelfShare configure%s ==%s\n\n" "$BOLD" "$BLUE" "$RESET" "$RESET"
+
+# -------- GO --------
+require_cmd go
+
+GO_VERSION="$(go version | awk '{print $3}' | sed 's/go//')"
+info "Detected Go version: $GO_VERSION (required >= $REQUIRED_GO)"
+
+if version_ge "$GO_VERSION" "$REQUIRED_GO"; then
+    ok "Go version OK"
+else
+    err "Go version $GO_VERSION is less than required $REQUIRED_GO"
+    echo
+    tool_install_hint "go"
+    echo
+    exit 1
+fi
+echo
+
+# -------- AIR --------
+if ! command -v air >/dev/null 2>&1; then
+    warn "air is missing — installing it now..."
+    install_go_pkg "air" "github.com/air-verse/air"
+fi
+
+AIR_VERSION=$(air -v | sed -n 's/.*v\([0-9.]*\),.*/\1/p')
+info "Detected air version: $AIR_VERSION (required >= $REQUIRED_AIR)"
+
+if version_ge "$AIR_VERSION" "$REQUIRED_AIR"; then
+    ok "air version OK"
+else
+    warn "air version too old — updating..."
+    install_go_pkg "air" "github.com/air-verse/air"
+fi
+echo
+
+# -------- SHFMT --------
+if ! command -v shfmt >/dev/null 2>&1; then
+    warn "shfmt is missing — installing it now..."
+    install_go_pkg "shfmt" "mvdan.cc/sh/v3/cmd/shfmt"
+fi
+
+SHFMT_VERSION=$(shfmt --version | sed 's/^v//')
+info "Detected shfmt version: $SHFMT_VERSION (required >= $REQUIRED_SHFMT)"
+
+if version_ge "$SHFMT_VERSION" "$REQUIRED_SHFMT"; then
+    ok "shfmt version OK"
+else
+    warn "shfmt version too old — updating..."
+    install_go_pkg "shfmt" "mvdan.cc/sh/v3/cmd/shfmt"
+fi
+echo
+
+# -------- BUN --------
+require_cmd bun
+
+BUN_VERSION="$(bun --version)"
+info "Detected Bun version: $BUN_VERSION (required >= $REQUIRED_BUN)"
+
+if version_ge "$BUN_VERSION" "$REQUIRED_BUN"; then
+    ok "Bun version OK"
+else
+    err "Bun version $BUN_VERSION is less than required $REQUIRED_BUN"
+    echo
+    tool_install_hint "bun"
+    echo
+    exit 1
+fi
+echo
+
+# -------- DOCKER --------
+require_cmd docker
+
+DOCKER_VERSION="$(docker --version | awk '{print $3}' | sed 's/,//')"
+info "Detected Docker version: $DOCKER_VERSION (required >= $REQUIRED_DOCKER)"
+
+if version_ge "$DOCKER_VERSION" "$REQUIRED_DOCKER"; then
+    ok "Docker version OK"
+else
+    err "Docker version $DOCKER_VERSION is less than required $REQUIRED_DOCKER"
+    echo
+    tool_install_hint "docker"
+    echo
+    exit 1
+fi
+echo
+
+ok "All requirements satisfied 🎉"
+
+# -------- Install JS dependencies with bun --------
+echo
+info "Installing JavaScript dependencies with bun install..."
+
+if bun install; then
+    ok "JavaScript dependencies installed"
+else
+    err "bun install failed. Fix the issues and rerun ./configure"
+    exit 1
+fi
+
+echo
+
+# Make scripts executable
+if [ -d scripts ]; then
+    echo
+    echo "Making all scripts/*.sh executable..."
+    chmod +x scripts/*.sh 2>/dev/null || true
+    echo
+    echo "Scripts are ready to go..."
+    echo
+    echo "Let's build and run the project!"
+fi
+
+# write a stamp file so make knows configure succeeded
+echo "configured on $(date)" >.configured
+
+echo
+exit 0
