@@ -1,6 +1,22 @@
 .ONESHELL:
 SHELL := /bin/bash
 
+.DEFAULT_GOAL := check_configured
+
+CONFIG_STAMP := .configured
+
+.PHONY: check_configured
+check_configured:
+	@if [ ! -f "$(CONFIG_STAMP)" ]; then \
+		echo "Please run the configure script before using any make commands:"; \
+		echo ""; \
+		echo "    chmod +x ./configure"; \
+		echo "    ./configure"; \
+		echo ""; \
+		exit 1; \
+	fi
+	echo "Environment ready. Use a specific make command"
+
 ENV_DEV  := .env
 ENV_TEST := .env.test
 ENV_LOCALPROD := .env.localprod
