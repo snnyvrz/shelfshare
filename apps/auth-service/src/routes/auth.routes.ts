@@ -24,7 +24,9 @@ router.post("/register", async (req, res) => {
         passwordHash,
     });
 
-    return res.status(201).json(user);
+    const token = signToken(user);
+
+    return res.status(201).json({ token, user });
 });
 
 router.post("/login", async (req, res) => {
