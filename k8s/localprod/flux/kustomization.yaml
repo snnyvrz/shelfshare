@@ -12,3 +12,7 @@ spec:
   path: ./k8s/localprod/apps
   prune: true
   targetNamespace: shelfshare-localprod
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
