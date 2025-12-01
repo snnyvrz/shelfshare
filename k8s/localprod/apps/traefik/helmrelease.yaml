@@ -1,0 +1,19 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: shelfshare-localprod
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: traefik
+      version: ">=37.4.0"
+      sourceRef:
+        kind: HelmRepository
+        name: traefik-charts
+        namespace: shelfshare-localprod
+  valuesFrom:
+    - kind: Secret
+      name: traefik-values
+      valuesKey: values.yaml

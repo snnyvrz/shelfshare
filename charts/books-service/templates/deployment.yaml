@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "books-service.fullname" . }}
+  labels:
+    {{- include "books-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "books-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "books-service.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: books-service
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+              name: http
+          env:
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+              {{- end }}
+              {{- if .Values.existingEnvSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingEnvSecret }}
+                {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
