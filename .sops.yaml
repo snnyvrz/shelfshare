@@ -1,5 +1,6 @@
 creation_rules:
-  - path_regex: k8s/localprod/.*\.sops\.yaml$
+  - path_regex: k8s/localprod/apps/.*\.sops\.ya?ml$
+    encrypted_regex: "^(data|stringData)$"
     key_groups:
       - age:
           - age1rg7x2x9azaxn7j5tht9tkne7lhtd2ajzevu7dlgaqr0f4enlwygste5dep
