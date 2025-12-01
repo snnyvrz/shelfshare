@@ -34,7 +34,6 @@ func ConnectWithRetry(cfg *config.Config) *gorm.DB {
 		}
 
 		log.Printf("db not ready (attempt %d/%d): %v", attempt, defaultMaxAttempts, err)
-		log.Println(cfg.DSN())
 		time.Sleep(defaultDelayBetweenTry)
 	}
 
