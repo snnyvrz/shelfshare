@@ -42,4 +42,4 @@ spec:
                 name: {{ .Values.existingEnvSecret }}
           {{- end }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+              {{- toYaml .Values.resources | nindent 12 }}
