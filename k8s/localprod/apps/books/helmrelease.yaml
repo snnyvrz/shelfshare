@@ -17,6 +17,8 @@ spec:
     image:
       repository: ghcr.io/snnyvrz/shelfshare-books-service
       tag: "latest"
+    imagePullSecrets:
+      - name: ghcr-credentials
     existingEnvSecret: books-config
     env:
       GIN_MODE: release
