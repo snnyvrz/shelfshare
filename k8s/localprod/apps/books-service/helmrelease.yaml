@@ -15,7 +15,7 @@ spec:
   values:
     image:
       repository: ghcr.io/snnyvrz/shelfshare-books-service
-      tag: 0.1.69
+      tag: 0.1.71
 
     imagePullSecrets:
       - name: ghcr-credentials
