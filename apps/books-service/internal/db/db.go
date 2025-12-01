@@ -18,6 +18,10 @@ func ConnectWithRetry(cfg *config.Config) *gorm.DB {
 	var db *gorm.DB
 	var err error
 
+	if cfg.DBHost == "" || cfg.DBName == "" || cfg.DBUser == "" || cfg.DBPass == "" || cfg.DBPort == "" {
+		log.Fatalf("invalid DB config: host=%q name=%q user=%q pass=%q port=%q", cfg.DBHost, cfg.DBName, cfg.DBUser, cfg.DBPass, cfg.DBPort)
+	}
+
 	for attempt := 1; attempt <= defaultMaxAttempts; attempt++ {
 		db, err = gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{})
 		if err == nil {
