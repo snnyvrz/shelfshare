@@ -12,7 +12,7 @@ case "$SERVICE" in
         echo "🚀 Starting books-service..."
         echo "Starting infra..."
 
-        docker compose --env-file "$ENV_FILE" -f "$INFRA_COMPOSE_FILE" up -d "$POSTGRES_SERVICE"
+        docker compose --env-file "$DEV_ENV_FILE" -f "$INFRA_COMPOSE_FILE" up -d "$POSTGRES_SERVICE"
 
         trap cleanup_infra INT TERM EXIT
 
@@ -27,7 +27,7 @@ case "$SERVICE" in
         echo "🔐 Starting auth-service..."
         echo "Starting infra..."
 
-        docker compose --env-file "$ENV_FILE" -f "$INFRA_COMPOSE_FILE" up -d "$MONGO_SERVICE"
+        docker compose --env-file "$DEV_ENV_FILE" -f "$INFRA_COMPOSE_FILE" up -d "$MONGO_SERVICE"
 
         trap cleanup_infra INT TERM EXIT
 
@@ -35,7 +35,7 @@ case "$SERVICE" in
 
         echo "Starting auth-service via Nx (Ctrl+C to stop everything)..."
         cd apps/auth-service
-        bun --watch src/index.ts || true
+        bunx serve auth-service || true
         ;;
 
     "")

@@ -1,70 +1,57 @@
 services:
-    traefik:
-        image: traefik:v3
-        container_name: traefik
-        command:
-            - "--api.dashboard=true"
-            - "--api.insecure=false"
-            - "--providers.docker=true"
-            - "--providers.docker.exposedbydefault=false"
-            - "--entrypoints.web.address=:80"
-            - "--entrypoints.websecure.address=:443"
-            - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-            - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-            - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
-            - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-            - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
-            - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+  traefik:
+    image: traefik:v3
+    container_name: traefik
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
 
-        ports:
-            - "80:80"
-            - "443:443"
-        volumes:
-            - "./letsencrypt:/letsencrypt"
-            - "/var/run/docker.sock:/var/run/docker.sock:ro"
-        restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - web
+    restart: unless-stopped
 
-    postgres:
-        image: postgres:18
-        container_name: postgres
-        restart: unless-stopped
-        environment:
-            POSTGRES_DB: ${POSTGRES_DB}
-            POSTGRES_USER: ${POSTGRES_USER}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-        ports:
-            - "${POSTGRES_PORT:-5432}:5432"
-        healthcheck:
-            test:
-                [
-                    "CMD-SHELL",
-                    "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
-                ]
-            interval: 5s
-            timeout: 3s
-            retries: 10
-        volumes:
-            - shelfshare_pg_data_prod:/var/lib/postgresql
+  books-service:
+    image: ${BOOKS_SERVICE_IMAGE:-ghcr.io/snnyvrz/shelfshare-books-service:latest}
+    container_name: shelfshare-books-service
+    env_file:
+      - .env.prod
+    networks:
+      - web
+    environment:
+      ENV: prod
+      GIN_MODE: release
+      TZ: Europe/Berlin
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_SSLMODE: ${POSTGRES_SSLMODE}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.books-service.rule=Host(`api.shelfshare.space`)"
+      - "traefik.http.routers.books-service.entrypoints=websecure"
+      - "traefik.http.routers.books-service.tls.certresolver=letsencrypt"
+      - "traefik.http.services.books-service.loadbalancer.server.port=8080"
 
-    books-service:
-        image: ${BOOKS_SERVICE_IMAGE:-ghcr.io/snnyvrz/shelfshare-books-service:latest}
-        container_name: shelfshare-books-service
-        env_file:
-            - .env.prod
-        environment:
-            POSTGRES_HOST: ${POSTGRES_HOST}
-            POSTGRES_USER: ${POSTGRES_USER}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-            POSTGRES_DB: ${POSTGRES_DB}
-            POSTGRES_PORT: ${POSTGRES_PORT}
-        labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.books-service.rule=Host(`api.shelfshare.space`)"
-            - "traefik.http.routers.books-service.entrypoints=websecure"
-            - "traefik.http.routers.books-service.tls.certresolver=letsencrypt"
-            - "traefik.http.services.books-service.loadbalancer.server.port=8080"
+    restart: unless-stopped
 
-        restart: unless-stopped
-
-volumes:
-    shelfshare_pg_data_prod:
+networks:
+  web:
+    driver: bridge

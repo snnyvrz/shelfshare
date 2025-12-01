@@ -1,0 +1,23 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: books-service
+  namespace: shelfshare-localprod
+spec:
+  interval: 5m
+  chart:
+    spec:
+      # Path to the chart inside the same Git repo
+      chart: ./charts/books-service
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  values:
+    image:
+      repository: ghcr.io/snnyvrz/shelfshare/books-service
+      tag: "latest"
+    existingEnvSecret: books-config
+    env:
+      GIN_MODE: release
+      TZ: Europe/Berlin

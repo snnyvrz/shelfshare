@@ -8,4 +8,4 @@ MONGO_SERVICE="mongo"
 
 INFRA_COMPOSE_FILE="docker-compose.infra.yml"
 
-ENV_FILE=".env"
+DEV_ENV_FILE=".env.dev"

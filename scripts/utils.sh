@@ -55,5 +55,5 @@ cleanup_infra() {
     echo
     echo "Stopping infra..."
     cd "$PROJECT_ROOT"
-    docker compose --env-file "$ENV_FILE" -f "$INFRA_COMPOSE_FILE" down
+    docker compose --env-file "$DEV_ENV_FILE" -f "$INFRA_COMPOSE_FILE" down
 }

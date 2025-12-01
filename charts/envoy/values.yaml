@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image:
+  repository: envoyproxy/envoy
+  tag: "v1.36-latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5432
+  targetPort: 5432
+
+labels:
+  app: envoy
+
+resources: {}
+
+config:
+  postgres:
+    host: shelfshare-postgres-postgresql
+    port: 5432

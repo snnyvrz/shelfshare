@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "envoy.fullname" . }}-config
+  labels:
+    {{- include "envoy.labels" . | nindent 4 }}
+data:
+  envoy.yaml: |
+    static_resources:
+      listeners:
+        - name: postgres_listener
+          address:
+            socket_address:
+              address: 0.0.0.0
+              port_value: {{ .Values.service.targetPort }}
+          filter_chains:
+            - filters:
+                - name: envoy.filters.network.tcp_proxy
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+                    stat_prefix: postgres
+                    cluster: postgres_cluster
+      clusters:
+        - name: postgres_cluster
+          connect_timeout: 5s
+          type: STRICT_DNS
+          load_assignment:
+            cluster_name: postgres_cluster
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: {{ .Values.config.postgres.host }}
+                          port_value: {{ .Values.config.postgres.port }}

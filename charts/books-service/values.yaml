@@ -1,0 +1,24 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/snnyvrz/shelfshare/books-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+podAnnotations: {}
+
+resources: {}
+
+labels:
+  app: books-service
+
+existingEnvSecret: books-config
+
+env:
+  GIN_MODE: release
+  TZ: UTC

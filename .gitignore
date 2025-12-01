@@ -11,9 +11,10 @@ tmp/
 coverage/
 docs/
 
-.env
+.env.dev
 .env.localprod
 .env.prod
+secrets.env
 
 .nx/cache
 .nx/workspace-data
