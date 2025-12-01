@@ -38,9 +38,9 @@ func findRepoRoot() string {
 }
 
 func Load() *Config {
-	env := getenv("ENV", "dev")
+	env := getenv("GIN_MODE", "debug")
 
-	if env == "dev" {
+	if env == "debug" {
 		filename := ".env.dev"
 		root := findRepoRoot()
 		envPath := filepath.Join(root, filename)
