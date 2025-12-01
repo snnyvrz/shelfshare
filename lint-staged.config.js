@@ -11,4 +11,6 @@ export default {
         files
             .filter((file) => !file.match(/^charts\/[^/]+\/templates\//))
             .map((file) => `bun x prettier --write ${file}`),
+
+    "charts/**": ["scripts/lint-helm.sh"],
 };
