@@ -17,7 +17,7 @@ resources: {}
 labels:
   app: books-service
 
-existingEnvSecret: books-config
+existingEnvSecret: books-service-secret
 
 env:
   GIN_MODE: release

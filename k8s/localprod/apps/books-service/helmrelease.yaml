@@ -7,7 +7,6 @@ spec:
   interval: 5m
   chart:
     spec:
-      # Path to the chart inside the same Git repo
       chart: ./charts/books-service
       sourceRef:
         kind: GitRepository
@@ -19,7 +18,7 @@ spec:
       tag: "latest"
     imagePullSecrets:
       - name: ghcr-credentials
-    existingEnvSecret: books-config
+    existingEnvSecret: books-service-secret
     env:
       GIN_MODE: release
       TZ: Europe/Berlin
