@@ -1,3 +1,4 @@
+---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
@@ -8,4 +9,4 @@ spec:
     name: books-service
   policy:
     semver:
-      range: ">=0.0.0"
+      range: ">=0.1.0 <1.0.0"
