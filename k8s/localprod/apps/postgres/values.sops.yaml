@@ -5,19 +5,19 @@ metadata:
   namespace: shelfshare-localprod
 type: Opaque
 stringData:
-  values.yaml: ENC[AES256_GCM,data:wDDYvt4nkdgUqkJa92A0vB0wcAkAA8QXPq0mbCwulEjPMn/uK6s4mCPHKQb1nUfhq6k2XJG1UOx1+1MNpyYilI3PTsIqcWlSBSN39EUPQxef3bsSLIjQXY68/c3z2nGcl+87Cysj9PEG8s2RzVu3jwz3q/pLLOOCokyyU0jsP7xAfylVa5NqYsec0KfBAeR0yT2cWNARgEJc,iv:58dp7sMu/xOlzDAhSsTp2mm2BphHEvwsyqW+HGHu600=,tag:aM8fKCsZGq9gdPnUvt99mA==,type:str]
+  values.yaml: ENC[AES256_GCM,data:isUkLkBMflXNymzxwAcjaZHGcOL7GR8yaQ55SpoHtPYnaD47Wigh/b9Z5iTq7yzcMxSHaoXvhYeSjJvIMx6iHufBe/XzsfVla4hTx5vMxfvNBPbdY0WVFrwSYnT9I7P3ErYVwZhnWCWhH5VyqSYJaqtxrl99c+LgMCP6c2oDMXlqS5cNeJ0XDyzttkhz9QQqri9hO452Ngca,iv:M3nwyaCQIMR08JEoCssQZZ8tPntWuO0zxODkR4hQZcw=,tag:K8pPQ+2+y4dTzQsmzkGfBw==,type:str]
 sops:
   age:
     - recipient: age1rg7x2x9azaxn7j5tht9tkne7lhtd2ajzevu7dlgaqr0f4enlwygste5dep
       enc: |
         -----BEGIN AGE ENCRYPTED FILE-----
-        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBJd3YwSTJ1YnRrM1dsc1NG
-        VTVGY294T2xGNnhhcnBvM01lVTZFUzgzeFFJCjdBK0xwRUVoRFM0Ynh2VVc2Vkxo
-        WXd4bG1tNW9JQWlnNk1zZzlqa0xXZjgKLS0tIERaN1A3clZwdTdsUklZMXFjd0NW
-        bTdScWFNNk1BVDNwWWloRzhVcWRwTUEK7wwXDOBP5M+y2QAWLc3uy/XOGEveAMKu
-        YKdnj6eY15VxhHdl5vYRt6dRQz4OVbqtblXkuFCSet/PbEgc4Xc9HQ==
+        YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBDQkV0ak1ubUhNUXJKQUFW
+        a1B3dytNQTA0cU5jZGRjS2xSczlnOVRPM3lrCmU1MXAvZHBRUXA5SDRUQ3FTS3J6
+        RldYZmN4eEpKN1NoTTlROHN6TURJeDQKLS0tIFE0N0pUV04yZi9TdUExWXRNQ0xi
+        Tjd0WWpaR1VrKzA5YXd6MGdTUHhxd1kKw5NclXzjV0X7lEauigjKvGhO9QS/XFrk
+        1k221DIB+wHmb55SxKLCaRkUHkhtCZmUIfUnPQrT4dKHNNK6nZ9dXA==
         -----END AGE ENCRYPTED FILE-----
-  lastmodified: "2025-12-01T03:28:27Z"
-  mac: ENC[AES256_GCM,data:RtoAzIW7+g4wbEtzsqJpU47pFEZ9hAeyL3n+fckkm9qMRnfRJH4/0EeALOWFDvrz50rqli3rtK65TVgQ/z6xOnL9+ivS4C9k/KYjnzU/AmCUXL8WtByfqyO0mW0QMNm/HBgwT/BzpC0C14rP1Bi/D/LNhIky8XX/+NMC7H99gVA=,iv:bJa7T3ENPTxsoAnNQIfysCmdYZc5y45yogPXfbDBRLU=,tag:y2bUl047hjznMBUEx2vbcQ==,type:str]
+  lastmodified: "2025-12-05T05:03:51Z"
+  mac: ENC[AES256_GCM,data:dIlO+gX3aKH8ZC8ZXwVzGk4lHwl9xujR8k80TOXdscdJ/HUD9jwEeh/26RbpEmw6+db5inRwAKDIb0w4ZjYAahVVRzQGkHQCJvvEoZfXylU0Mwe1Iy+ANZt2nuYEaOhxIxLyxDD8P7e5VKsyqVPY7jiZryRCUXIcFcQ/NgL+so0=,iv:RDic9iHG4OL/CnTayUYa6RSg22A87CxMKAGuR57jQh4=,tag:sz8oQnubfV+D7aE5QBwCzQ==,type:str]
   encrypted_regex: ^(data|stringData)$
   version: 3.11.0

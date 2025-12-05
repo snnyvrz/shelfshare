@@ -56,6 +56,21 @@ EOF
     return 1
 }
 
+# ======== Same Major Version: v1 ~ v2 ? ========
+version_ge_same_major() {
+    v="$1"
+    req="$2"
+
+    v_major=${v%%.*}
+    req_major=${req%%.*}
+
+    if [ "$v_major" -ne "$req_major" ]; then
+        return 1
+    fi
+
+    version_ge "$v" "$req"
+}
+
 # ========= helper: install go pkg =========
 install_go_pkg() {
     tool="$1"
@@ -119,7 +134,7 @@ require_cmd go
 GO_VERSION="$(go version | awk '{print $3}' | sed 's/go//')"
 info "Detected Go version: $GO_VERSION (required >= $REQUIRED_GO)"
 
-if version_ge "$GO_VERSION" "$REQUIRED_GO"; then
+if version_ge_same_major "$GO_VERSION" "$REQUIRED_GO"; then
     ok "Go version OK"
 else
     err "Go version $GO_VERSION is less than required $REQUIRED_GO"
@@ -139,7 +154,7 @@ fi
 AIR_VERSION=$(air -v | sed -n 's/.*v\([0-9.]*\),.*/\1/p')
 info "Detected air version: $AIR_VERSION (required >= $REQUIRED_AIR)"
 
-if version_ge "$AIR_VERSION" "$REQUIRED_AIR"; then
+if version_ge_same_major "$AIR_VERSION" "$REQUIRED_AIR"; then
     ok "air version OK"
 else
     warn "air version too old — updating..."
@@ -156,7 +171,7 @@ fi
 SHFMT_VERSION=$(shfmt --version | sed 's/^v//')
 info "Detected shfmt version: $SHFMT_VERSION (required >= $REQUIRED_SHFMT)"
 
-if version_ge "$SHFMT_VERSION" "$REQUIRED_SHFMT"; then
+if version_ge_same_major "$SHFMT_VERSION" "$REQUIRED_SHFMT"; then
     ok "shfmt version OK"
 else
     warn "shfmt version too old — updating..."
@@ -170,7 +185,7 @@ require_cmd bun
 BUN_VERSION="$(bun --version)"
 info "Detected Bun version: $BUN_VERSION (required >= $REQUIRED_BUN)"
 
-if version_ge "$BUN_VERSION" "$REQUIRED_BUN"; then
+if version_ge_same_major "$BUN_VERSION" "$REQUIRED_BUN"; then
     ok "Bun version OK"
 else
     err "Bun version $BUN_VERSION is less than required $REQUIRED_BUN"
@@ -187,7 +202,7 @@ require_cmd docker
 DOCKER_VERSION="$(docker --version | awk '{print $3}' | sed 's/,//')"
 info "Detected Docker version: $DOCKER_VERSION (required >= $REQUIRED_DOCKER)"
 
-if version_ge "$DOCKER_VERSION" "$REQUIRED_DOCKER"; then
+if version_ge_same_major "$DOCKER_VERSION" "$REQUIRED_DOCKER"; then
     ok "Docker version OK"
 else
     err "Docker version $DOCKER_VERSION is less than required $REQUIRED_DOCKER"
@@ -210,7 +225,7 @@ SOPS_VERSION="$(
 
 info "Detected sops version: $SOPS_VERSION (required >= $REQUIRED_SOPS)"
 
-if version_ge "$SOPS_VERSION" "$REQUIRED_SOPS"; then
+if version_ge_same_major "$SOPS_VERSION" "$REQUIRED_SOPS"; then
     ok "sops version OK"
 else
     err "sops version $SOPS_VERSION is less than required $REQUIRED_SOPS"

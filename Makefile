@@ -143,6 +143,16 @@ books-localprod: ## Run local production stack (Postgres + books-api)
 		-f docker-compose.localprod.yml \
 		up --build
 
+.PHONY: decrypt-secrets
+decrypt-secrets: check_configured
+decrypt-secrets: ## Decrypt secrets using sops
+	./scripts/sops.sh decrypt $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: encrypt-secrets
+encrypt-secrets: check_configured
+encrypt-secrets: ## Encrypt secrets using sops
+	./scripts/sops.sh encrypt $(filter-out $@,$(MAKECMDGOALS))
+
 .PHONY: configure-force
 configure-force: ## Force re-running the configure script
 	@rm -f $(CONFIG_STAMP)
