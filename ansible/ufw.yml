@@ -1,0 +1,44 @@
+---
+- name: Configure firewall with UFW
+  hosts: hetzner
+  become: true
+  vars:
+    ssh_allowed_ip: "1.2.3.4"
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install ufw
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Set default deny incoming
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set default allow outgoing
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Allow SSH from your home IP only
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        from_ip: "{{ ssh_allowed_ip }}"
+
+    - name: Allow WireGuard port
+      community.general.ufw:
+        rule: allow
+        port: "51820"
+        proto: udp
+
+    - name: Enable ufw
+      community.general.ufw:
+        state: enabled
+        logging: on
