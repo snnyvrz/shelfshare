@@ -33,6 +33,11 @@ jobs:
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
+          sudo apt-get update
+          sudo apt-get install -y wget
+          wget https://github.com/getsops/sops/releases/download/v3.11.0/sops_3.11.0_amd64.deb
+          sudo dpkg -i sops_3.11.0_amd64.deb
+          sops --version
           mkdir -p ~/.config/sops/age
           printf '%s\n' "$SOPS_AGE_KEY" > ~/.config/sops/age/keys.txt
 
