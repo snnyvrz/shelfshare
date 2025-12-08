@@ -1,0 +1,32 @@
+---
+- name: Configure base OS on servers (UFW, packages, users, etc.)
+  hosts: all
+  become: true
+  vars_files:
+    - inventories/hetzner/group_vars/secrets.sops.yml
+
+# ==========================================
+
+- name: Download k3s binary
+  hosts: k3s_cluster
+  become: true
+  roles:
+    - { role: k3s-ansible/download }
+
+- name: Install k3s server (master nodes only)
+  hosts: master
+  become: true
+  roles:
+    - { role: k3s-ansible/k3s_server }
+
+- name: Install k3s agent (worker nodes only)
+  hosts: node
+  become: true
+  roles:
+    - { role: k3s-ansible/k3s_agent }
+
+- name: Post-installation tasks for k3s server
+  hosts: master
+  become: true
+  roles:
+    - { role: k3s-ansible/k3s_server_post }
