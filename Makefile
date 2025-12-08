@@ -34,6 +34,15 @@ help: ## Show the help message
 	@grep -E '^[a-zA-Z0-9_.-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*##"} {printf "  %-25s %s\n", $$1, $$2}'
 	@echo ""
 
+.PHONY: decrypt-secrets
+decrypt-secrets: check_configured
+decrypt-secrets: ## Decrypt secrets using sops
+	./scripts/sops.sh decrypt $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: encrypt-secrets
+encrypt-secrets: check_configured
+encrypt-secrets: ## Encrypt secrets using sops
+	./scripts/sops.sh encrypt $(filter-out $@,$(MAKECMDGOALS))
 
 ENV_DEV  := .env
 ENV_TEST := .env.test
@@ -63,12 +72,12 @@ define wait_for_postgres
 endef
 
 .PHONY: dev
-dev: check_configured
+dev: check_configured deecrypt-secrets
 dev: ## Run development environment
 	./scripts/dev.sh $(filter-out $@,$(MAKECMDGOALS))
 
 .PHONY: test
-test: check_configured
+test: check_configured decrypt-secrets
 test: ## Run tests
 	./scripts/test.sh $(filter-out $@,$(MAKECMDGOALS))
 
@@ -77,13 +86,13 @@ books auth:
 	@:
 
 .PHONY: books-coverage
-books-coverage: check_configured
+books-coverage: check_configured decrypt-secrets
 books-coverage: ## Run books-service coverage and open report
 	bun x nx affected --target=coverage
 	nohup xdg-open apps/books-service/coverage/coverage.html >/dev/null 2>&1 & echo "" || true
 
 .PHONY: books-integration-test
-books-integration-test: check_configured
+books-integration-test: check_configured decrypt-secrets
 books-integration-test: ENV_FILE=$(ENV_TEST)
 books-integration-test: ## Run books-service integration tests with infra
 	@set -e
@@ -107,7 +116,7 @@ books-integration-test: ## Run books-service integration tests with infra
 	$(DC) down
 
 .PHONY: books-infra-up
-books-infra-up: check_configured
+books-infra-up: check_configured decrypt-secrets
 books-infra-up: ENV_FILE=$(ENV_DEV)
 books-infra-up: ## Start only the infra services (Postgres)
 	$(DC) up -d $(POSTGRES_SERVICE)
@@ -125,7 +134,7 @@ logs: ## Show logs for infra services
 	$(DC) logs -f
 
 .PHONY: books-localprod
-books-localprod: check_configured
+books-localprod: check_configured decrypt-secrets
 books-localprod: ## Run local production stack (Postgres + books-api)
 	@set -e
 	echo "Starting localprod stack (Postgres + books-api)..."
@@ -142,16 +151,6 @@ books-localprod: ## Run local production stack (Postgres + books-api)
 	docker compose --env-file $(ENV_LOCALPROD) \
 		-f docker-compose.localprod.yml \
 		up --build
-
-.PHONY: decrypt-secrets
-decrypt-secrets: check_configured
-decrypt-secrets: ## Decrypt secrets using sops
-	./scripts/sops.sh decrypt $(filter-out $@,$(MAKECMDGOALS))
-
-.PHONY: encrypt-secrets
-encrypt-secrets: check_configured
-encrypt-secrets: ## Encrypt secrets using sops
-	./scripts/sops.sh encrypt $(filter-out $@,$(MAKECMDGOALS))
 
 .PHONY: configure-force
 configure-force: ## Force re-running the configure script
