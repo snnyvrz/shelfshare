@@ -1,5 +1,5 @@
 creation_rules:
-  - path_regex: \.sops\.
+  - path_regex: .*\.sops\.
     key_groups:
       - age:
           - age1rg7x2x9azaxn7j5tht9tkne7lhtd2ajzevu7dlgaqr0f4enlwygste5dep
