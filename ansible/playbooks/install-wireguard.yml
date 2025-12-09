@@ -1,0 +1,28 @@
+---
+- name: Ensure WireGuard installed on all Ubuntu hosts
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install WireGuard packages
+      ansible.builtin.apt:
+        name:
+          - wireguard
+          - wireguard-tools
+        state: present
+
+    - name: Ensure WireGuard kernel module is loaded
+      ansible.builtin.modprobe:
+        name: wireguard
+        state: present
+
+    - name: Make sure wireguard module loads on boot
+      ansible.builtin.lineinfile:
+        path: /etc/modules
+        line: wireguard
+        state: present
