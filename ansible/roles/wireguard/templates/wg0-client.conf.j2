@@ -1,0 +1,9 @@
+[Interface]
+Address = {{ wg_address }}
+PrivateKey = {{ wg_private_key }}
+
+[Peer]
+PublicKey = {{ hostvars[groups['wireguard_server'][0]].wg_public_key }}
+Endpoint = {{ hostvars[groups['wireguard_server'][0]].wg_endpoint }}
+AllowedIPs = {{ wg_client_allowed_ips }}
+PersistentKeepalive = {{ wg_client_persistent_keepalive }}

@@ -1,0 +1,13 @@
+- name: Include install tasks
+  ansible.builtin.include_tasks: install.yml
+
+- name: Include key management tasks
+  ansible.builtin.include_tasks: keys.yml
+
+- name: Configure WireGuard server
+  ansible.builtin.include_tasks: server.yml
+  when: "'wireguard_server' in group_names"
+
+- name: Configure WireGuard client
+  ansible.builtin.include_tasks: client.yml
+  when: "'wireguard_clients' in group_names"

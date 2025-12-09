@@ -1,0 +1,14 @@
+- name: Render wg0.conf for WireGuard client
+  ansible.builtin.template:
+    src: wg0-client.conf.j2
+    dest: "/etc/wireguard/{{ wg_interface }}.conf"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: restart wireguard
+
+- name: Enable and start WireGuard client interface
+  ansible.builtin.systemd:
+    name: "wg-quick@{{ wg_interface }}"
+    state: started
+    enabled: true

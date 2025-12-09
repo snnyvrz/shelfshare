@@ -1,0 +1,9 @@
+wg_interface: wg0
+wg_listen_port: 51820
+wg_network_cidr: 10.10.0.0/24
+
+wg_server_peer_allowed_ips: "10.10.0.0/24"
+wg_client_allowed_ips: "10.10.0.0/24"
+wg_client_persistent_keepalive: 25
+
+wg_manage_firewall: false
