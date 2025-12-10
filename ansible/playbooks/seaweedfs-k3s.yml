@@ -1,0 +1,490 @@
+---
+# playbook.yml
+- name: Deploy SeaweedFS on K3s with Helm (Merge Kubeconfig)
+  hosts: k3s_servers
+  become: true
+  vars:
+    # SeaweedFS configuration
+    seaweedfs_namespace: "seaweedfs"
+    seaweedfs_release_name: "seaweedfs"
+    helm_chart_repo: "https://seaweedfs.github.io/seaweedfs/helm"
+    helm_chart_name: "seaweedfs"
+    helm_chart_version: "4.0.402"
+
+    # Kubeconfig settings
+    k3s_kubeconfig_path: "/etc/rancher/k3s/k3s.yaml"
+    local_kubeconfig_path: "{{ lookup('env', 'HOME') + '/.kube/config' }}"
+    k3s_context_name: "k3s-shelfshare"
+
+    # Storage configuration
+    master_replicas: 1
+    volume_replicas: 1
+    filer_replicas: 1
+
+    # Storage classes and sizes
+    storage_class: "local-path"
+    master_storage_size: "10Gi"
+    volume_storage_size: "10Gi"
+    filer_storage_size: "10Gi"
+
+    # S3 configuration
+    s3_enabled: true
+    s3_port: 8333
+
+  tasks:
+    # ============================================
+    # PART 1: Merge Kubeconfig on Local Machine
+    # ============================================
+
+    - name: Create temporary directory for kubeconfig operations
+      delegate_to: localhost
+      become: false
+      file:
+        path: /tmp/k3s-kubeconfig-merge
+        state: directory
+        mode: "0700"
+
+    - name: Fetch K3s kubeconfig from server
+      fetch:
+        src: "{{ k3s_kubeconfig_path }}"
+        dest: /tmp/k3s-kubeconfig-merge/k3s.yaml
+        flat: yes
+      become: true
+
+    - name: Read the fetched K3s kubeconfig
+      delegate_to: localhost
+      become: false
+      slurp:
+        src: /tmp/k3s-kubeconfig-merge/k3s.yaml
+      register: k3s_kubeconfig_content
+
+    - name: Decode K3s kubeconfig
+      delegate_to: localhost
+      become: false
+      set_fact:
+        k3s_config: "{{ k3s_kubeconfig_content.content | b64decode | from_yaml }}"
+
+    - name: Determine K3s API URL to use
+      delegate_to: localhost
+      become: false
+      set_fact:
+        k3s_api_url: "https://{{ k3s_api_host | default(ansible_host) }}:6443"
+
+    - name: Display K3s API URL being configured
+      delegate_to: localhost
+      become: false
+      debug:
+        msg: "Configuring kubectl to use K3s API at: {{ k3s_api_url }}"
+
+    - name: Update server URL in K3s config
+      delegate_to: localhost
+      become: false
+      set_fact:
+        k3s_config_updated: >-
+          {{
+            k3s_config | combine({
+              'clusters': [
+                k3s_config.clusters[0] | combine({
+                  'cluster': k3s_config.clusters[0].cluster | combine({
+                    'server': k3s_api_url
+                  })
+                })
+              ]
+            }, recursive=True)
+          }}
+
+    - name: Rename K3s context
+      delegate_to: localhost
+      become: false
+      set_fact:
+        k3s_config_final: >-
+          {{
+            k3s_config_updated | combine({
+              'contexts': [
+                k3s_config_updated.contexts[0] | combine({
+                  'name': k3s_context_name,
+                  'context': k3s_config_updated.contexts[0].context | combine({
+                    'cluster': k3s_context_name,
+                    'user': k3s_context_name
+                  })
+                })
+              ],
+              'clusters': [
+                k3s_config_updated.clusters[0] | combine({
+                  'name': k3s_context_name
+                })
+              ],
+              'users': [
+                k3s_config_updated.users[0] | combine({
+                  'name': k3s_context_name
+                })
+              ],
+              'current-context': k3s_context_name
+            }, recursive=True)
+          }}
+
+    - name: Write updated K3s kubeconfig
+      delegate_to: localhost
+      become: false
+      copy:
+        content: "{{ k3s_config_final | to_nice_yaml }}"
+        dest: /tmp/k3s-kubeconfig-merge/k3s-updated.yaml
+        mode: "0600"
+
+    - name: Backup existing kubeconfig
+      delegate_to: localhost
+      become: false
+      copy:
+        src: "{{ local_kubeconfig_path }}"
+        dest: "{{ local_kubeconfig_path }}.backup-{{ ansible_date_time.epoch }}"
+        remote_src: yes
+        mode: "0600"
+      ignore_errors: true
+
+    - name: Merge kubeconfigs using kubectl
+      delegate_to: localhost
+      become: false
+      shell: |
+        KUBECONFIG={{ local_kubeconfig_path }}:/tmp/k3s-kubeconfig-merge/k3s-updated.yaml \
+        kubectl config view --flatten > /tmp/k3s-kubeconfig-merge/merged-config.yaml
+      args:
+        executable: /bin/bash
+
+    - name: Replace existing kubeconfig with merged version
+      delegate_to: localhost
+      become: false
+      copy:
+        src: /tmp/k3s-kubeconfig-merge/merged-config.yaml
+        dest: "{{ local_kubeconfig_path }}"
+        mode: "0600"
+
+    - name: Force K3s cluster to use WireGuard IP
+      delegate_to: localhost
+      become: false
+      environment:
+        KUBECONFIG: "{{ local_kubeconfig_path }}"
+      command: >
+        kubectl config set-cluster {{ k3s_context_name }}
+        --server={{ k3s_api_url }}
+      register: set_cluster_server
+      changed_when: '''Property "server" set'' in set_cluster_server.stdout'
+
+    - name: Show current server for k3s-shelfshare
+      delegate_to: localhost
+      become: false
+      environment:
+        KUBECONFIG: "{{ local_kubeconfig_path }}"
+      command: >
+        kubectl config view
+        --minify
+        --context {{ k3s_context_name }}
+        -o jsonpath='{.clusters[0].cluster.server}'
+      register: current_server
+      changed_when: false
+
+    - name: Display current K3s API server
+      delegate_to: localhost
+      become: false
+      debug:
+        msg: "Current K3s API server: {{ current_server.stdout }}"
+
+    - name: Verify merged kubeconfig
+      delegate_to: localhost
+      become: false
+      command: kubectl config get-contexts
+      register: contexts_output
+      changed_when: false
+
+    - name: Display available contexts
+      delegate_to: localhost
+      become: false
+      debug:
+        msg: "{{ contexts_output.stdout_lines }}"
+
+    - name: Switch to K3s context
+      delegate_to: localhost
+      become: false
+      command: kubectl config use-context {{ k3s_context_name }}
+      register: context_switch
+      changed_when: "'Switched to context' in context_switch.stdout"
+
+    - name: Test K3s connection (with timeout)
+      delegate_to: localhost
+      become: false
+      command: timeout 10 kubectl get nodes
+      register: nodes_output
+      changed_when: false
+      failed_when: false
+      retries: 3
+      delay: 5
+
+    - name: Display K3s nodes (if successful)
+      delegate_to: localhost
+      become: false
+      debug:
+        msg: "{{ nodes_output.stdout_lines }}"
+      when: nodes_output.rc == 0
+
+    - name: Verify kubectl can connect to K3s
+      delegate_to: localhost
+      become: false
+      shell: |
+        export KUBECONFIG={{ local_kubeconfig_path }}
+        kubectl get nodes --request-timeout=10s
+      register: nodes_output
+      changed_when: false
+      failed_when: false
+
+    - name: Clean up temporary files
+      delegate_to: localhost
+      become: false
+      file:
+        path: /tmp/k3s-kubeconfig-merge
+        state: absent
+
+    # ============================================
+    # PART 2: Install Helm on Local Machine
+    # ============================================
+
+    - name: Check if Helm is installed locally
+      delegate_to: localhost
+      become: false
+      command: helm version
+      register: helm_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Install Helm on local machine
+      delegate_to: localhost
+      become: false
+      shell: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | bash
+      when: helm_check.rc != 0
+
+    # ============================================
+    # PART 3: Deploy SeaweedFS
+    # ============================================
+
+    - name: Add SeaweedFS Helm repository
+      delegate_to: localhost
+      become: false
+      command: helm repo add seaweedfs {{ helm_chart_repo }}
+      register: helm_repo_add
+      changed_when: "'has been added' in helm_repo_add.stdout"
+      failed_when: helm_repo_add.rc != 0 and 'already exists' not in helm_repo_add.stderr
+
+    - name: Update Helm repositories
+      delegate_to: localhost
+      become: false
+      command: helm repo update
+      changed_when: false
+
+    - name: Create SeaweedFS namespace
+      delegate_to: localhost
+      become: false
+      environment:
+        KUBECONFIG: "{{ local_kubeconfig_path }}"
+      command: kubectl create namespace {{ seaweedfs_namespace }} --context {{ k3s_context_name }}
+      register: namespace_create
+      changed_when: namespace_create.rc == 0
+      failed_when: namespace_create.rc != 0 and 'AlreadyExists' not in namespace_create.stderr
+
+    - name: Create SeaweedFS values file
+      delegate_to: localhost
+      become: false
+      copy:
+        content: |
+          # SeaweedFS Helm Values
+          global:
+            replicationPlacment: "001"
+            monitoring:
+              enabled: false
+
+          master:
+            enabled: true
+            replicas: {{ master_replicas }}
+            port: 9333
+            grpcPort: 19333
+            metricsPort: 9327
+
+            persistence:
+              enabled: true
+              storageClass: "{{ storage_class }}"
+              size: {{ master_storage_size }}
+
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "128Mi"
+              limits:
+                cpu: "500m"
+                memory: "512Mi"
+
+          volume:
+            enabled: true
+            replicas: {{ volume_replicas }}
+            port: 8080
+            grpcPort: 18080
+            metricsPort: 9327
+
+            persistence:
+              enabled: true
+              storageClass: "{{ storage_class }}"
+              size: {{ volume_storage_size }}
+
+            resources:
+              requests:
+                cpu: "200m"
+                memory: "256Mi"
+              limits:
+                cpu: "1000m"
+                memory: "1Gi"
+
+          filer:
+            enabled: true
+            replicas: {{ filer_replicas }}
+            port: 8888
+            grpcPort: 18888
+            metricsPort: 9327
+
+            persistence:
+              enabled: true
+              storageClass: "{{ storage_class }}"
+              size: {{ filer_storage_size }}
+
+            s3:
+              enabled: {{ s3_enabled | lower }}
+              port: {{ s3_port }}
+              enableAuth: true
+              allowEmptyFolder: true
+              allowDeleteBucketNotEmpty: false
+
+            resources:
+              requests:
+                cpu: "200m"
+                memory: "256Mi"
+              limits:
+                cpu: "1000m"
+                memory: "1Gi"
+
+          service:
+            type: ClusterIP
+
+          ingress:
+            enabled: false
+        dest: /tmp/seaweedfs-values.yaml
+        mode: "0644"
+
+    - name: Deploy SeaweedFS with Helm
+      delegate_to: localhost
+      become: false
+      command: >
+        helm upgrade --install {{ seaweedfs_release_name }} {{ helm_chart_name }}
+        --repo {{ helm_chart_repo }}
+        --namespace {{ seaweedfs_namespace }}
+        --values /tmp/seaweedfs-values.yaml
+        --version {{ helm_chart_version }}
+        --wait
+        --timeout 10m
+      register: helm_deploy
+      changed_when: "'has been upgraded' in helm_deploy.stdout or 'has been installed' in helm_deploy.stdout"
+
+    - name: Wait for SeaweedFS pods to be ready
+      delegate_to: localhost
+      become: false
+      command: >
+        kubectl wait --for=condition=ready pod
+        -l app.kubernetes.io/name=seaweedfs
+        -n {{ seaweedfs_namespace }}
+        --timeout=300s
+      register: pod_wait
+      changed_when: false
+      retries: 3
+      delay: 10
+
+    - name: Get SeaweedFS service information
+      delegate_to: localhost
+      become: false
+      command: kubectl get svc -n {{ seaweedfs_namespace }}
+      register: services
+      changed_when: false
+
+    - name: Display SeaweedFS services
+      delegate_to: localhost
+      become: false
+      debug:
+        msg: "{{ services.stdout_lines }}"
+
+    - name: Get SeaweedFS pod status
+      delegate_to: localhost
+      become: false
+      command: kubectl get pods -n {{ seaweedfs_namespace }}
+      register: pods
+      changed_when: false
+
+    - name: Display SeaweedFS pods
+      delegate_to: localhost
+      become: false
+      debug:
+        msg: "{{ pods.stdout_lines }}"
+
+    - name: Create S3 credentials secret (if S3 enabled)
+      delegate_to: localhost
+      become: false
+      shell: |
+        kubectl create secret generic seaweedfs-s3-secret \
+          --from-literal=admin_access_key_id=admin \
+          --from-literal=admin_secret_access_key=$(openssl rand -base64 32) \
+          -n {{ seaweedfs_namespace }} \
+          --dry-run=client -o yaml | kubectl apply -f -
+      when: s3_enabled
+      register: s3_secret
+      changed_when: "'created' in s3_secret.stdout or 'configured' in s3_secret.stdout"
+
+    - name: Get S3 access credentials
+      delegate_to: localhost
+      become: false
+      shell: |
+        echo "Access Key: $(kubectl get secret seaweedfs-s3-secret -n {{ seaweedfs_namespace }} -o jsonpath='{.data.admin_access_key_id}' | base64 -d)"
+        echo "Secret Key: $(kubectl get secret seaweedfs-s3-secret -n {{ seaweedfs_namespace }} -o jsonpath='{.data.admin_secret_access_key}' | base64 -d)"
+      register: s3_creds
+      when: s3_enabled
+      changed_when: false
+
+    - name: Display S3 credentials
+      delegate_to: localhost
+      become: false
+      debug:
+        msg: "{{ s3_creds.stdout_lines }}"
+      when: s3_enabled
+
+    - name: Display final connection information
+      delegate_to: localhost
+      become: false
+      debug:
+        msg:
+          - "=========================================="
+          - "SeaweedFS Deployment Complete!"
+          - "=========================================="
+          - ""
+          - "Kubeconfig has been merged successfully!"
+          - "K3s context name: {{ k3s_context_name }}"
+          - "K3s API URL: {{ k3s_api_url }}"
+          - "Minikube context preserved: minikube"
+          - ""
+          - "Switch between contexts:"
+          - "  kubectl config use-context {{ k3s_context_name }}"
+          - "  kubectl config use-context minikube"
+          - ""
+          - "Current context: {{ k3s_context_name }}"
+          - ""
+          - "Access SeaweedFS using port-forward:"
+          - "  kubectl port-forward -n {{ seaweedfs_namespace }} svc/{{ seaweedfs_release_name }}-master 9333:9333"
+          - "  kubectl port-forward -n {{ seaweedfs_namespace }} svc/{{ seaweedfs_release_name }}-filer 8888:8888"
+          - "  kubectl port-forward -n {{ seaweedfs_namespace }} svc/{{ seaweedfs_release_name }}-s3 8333:8333"
+          - ""
+          - "URLs (after port-forward):"
+          - "  Master UI: http://localhost:9333"
+          - "  Filer UI:  http://localhost:8888"
+          - "  S3 API:    http://localhost:8333"
+          - "=========================================="
