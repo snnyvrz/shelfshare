@@ -1,0 +1,21 @@
+---
+# Flux CLI version
+flux_cli_version: "2.7.5"
+
+# Where to install flux CLI
+flux_cli_install_path: /usr/local/bin/flux
+
+# Kubeconfig paths on each host (server/local VM)
+k3s_kubeconfig_path: "/etc/rancher/k3s/k3s.yaml"
+
+# For bootstrapping
+flux_git_repo_name: "shelfshare"
+flux_git_branch: "main"
+flux_git_path: "clusters/{{ flux_cluster_name }}"
+
+# cluster_name must be provided per play / host
+flux_cluster_name: "shelfshare-k3s"
+
+# owner (GitHub username or org)
+flux_git_owner: "snnyvrz"
+flux_git_token_env_var: "GITHUB_TOKEN"

@@ -1,0 +1,14 @@
+---
+- name: Install and bootstrap FluxCD on k3s servers
+  hosts: k3s_servers
+  become: true
+  vars:
+    flux_cluster_name: "shelfshare-k3s"
+    k3s_kubeconfig_path: "/etc/rancher/k3s/k3s.yaml"
+    flux_git_owner: "snnyvrz"
+    flux_git_repo_name: "shelfshare"
+    flux_git_branch: "main"
+    flux_git_path: "clusters/shelfshare-k3s"
+    flux_do_bootstrap: true
+  roles:
+    - fluxcd

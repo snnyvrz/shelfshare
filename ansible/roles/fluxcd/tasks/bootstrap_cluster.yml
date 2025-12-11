@@ -1,0 +1,48 @@
+---
+- name: Ensure flux CLI is installed
+  ansible.builtin.include_tasks: install_cli.yml
+
+- name: Ensure kubeconfig exists
+  ansible.builtin.stat:
+    path: "{{ k3s_kubeconfig_path }}"
+  register: kubeconfig_stat
+
+- name: Fail if kubeconfig is not found
+  ansible.builtin.fail:
+    msg: "Kubeconfig not found at {{ k3s_kubeconfig_path }}"
+  when: not kubeconfig_stat.stat.exists
+
+- name: Debug github token (length only)
+  ansible.builtin.debug:
+    msg: "Token length: {{ flux_github_token | length }}"
+
+- name: Bootstrap FluxCD on cluster {{ flux_cluster_name }}
+  ansible.builtin.command: >
+    flux bootstrap github
+    --owner={{ flux_git_owner }}
+    --repository={{ flux_git_repo_name }}
+    --branch={{ flux_git_branch }}
+    --path={{ flux_git_path }}
+    --personal
+    --verbose
+  args:
+    chdir: /tmp
+  environment:
+    KUBECONFIG: "{{ k3s_kubeconfig_path }}"
+    GITHUB_TOKEN: "{{ flux_github_token }}"
+  async: 120
+  poll: 15
+  register: flux_bootstrap
+  changed_when: >
+    'initialized' in flux_bootstrap.stdout
+    or 'reconcile' in flux_bootstrap.stdout
+    or 'applied' in flux_bootstrap.stdout
+
+- name: Show flux bootstrap stdout
+  ansible.builtin.debug:
+    var: flux_bootstrap.stdout
+
+- name: Show flux bootstrap stderr
+  ansible.builtin.debug:
+    var: flux_bootstrap.stderr
+  when: flux_bootstrap.stderr is defined

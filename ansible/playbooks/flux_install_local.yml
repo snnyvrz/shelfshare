@@ -1,0 +1,8 @@
+---
+- name: Install Flux CLI on local machine
+  hosts: local_fluxcd
+  gather_facts: false
+  vars:
+    flux_do_bootstrap: false
+  roles:
+    - fluxcd
