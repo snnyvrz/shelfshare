@@ -25,6 +25,7 @@
     --path={{ flux_git_path }}
     --personal
     --verbose
+    --components-extra=image-reflector-controller,image-automation-controller
   args:
     chdir: /tmp
   environment:

@@ -16,7 +16,8 @@ spec:
     fullnameOverride: "books-service"
     image:
       repository: ghcr.io/snnyvrz/shelfshare-books-service
-      tag: 0.1.72
+      tag: "0.1.72" # {"$imagepolicy": "flux-system:books-service"}
+      pullPolicy: IfNotPresent
 
     imagePullSecrets:
       - name: ghcr-credentials
