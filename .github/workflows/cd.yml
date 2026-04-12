@@ -72,6 +72,7 @@ jobs:
         id: deploy_config
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -80,31 +81,51 @@ jobs:
         run: |
           if [ -n "$DEPLOY_HOST" ] && [ -n "$DEPLOY_USER" ] && [ -n "$DEPLOY_PATH" ] && [ -n "$DEPLOY_SSH_KEY" ] && [ -n "$GHCR_USERNAME" ] && [ -n "$GHCR_TOKEN" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "port=${DEPLOY_PORT:-22}" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "Deployment secrets are incomplete. Skipping deploy."
           fi
 
-      - name: Configure SSH
+      - name: Start SSH agent
         if: steps.deploy_config.outputs.enabled == 'true'
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        if: steps.deploy_config.outputs.enabled == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ steps.deploy_config.outputs.port }}
         run: |
           mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Upload deployment files
         if: steps.deploy_config.outputs.enabled == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ steps.deploy_config.outputs.port }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "mkdir -p '${{ secrets.DEPLOY_PATH }}'"
-          scp docker-compose.prod.yml .env.example "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+          ssh -o StrictHostKeyChecking=yes -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
+          scp -P "$DEPLOY_PORT" docker-compose.prod.yml .env.example "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
 
       - name: Deploy application
         if: steps.deploy_config.outputs.enabled == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ steps.deploy_config.outputs.port }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "
+          ssh -o StrictHostKeyChecking=yes -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" "
             set -e
-            cd '${{ secrets.DEPLOY_PATH }}'
+            cd '${DEPLOY_PATH}'
             mkdir -p letsencrypt
             touch letsencrypt/acme.json
             chmod 600 letsencrypt/acme.json
