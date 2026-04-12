@@ -24,9 +24,7 @@ services:
       - web
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${IMAGE_NAME:?IMAGE_NAME must be set}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks:
       - web
