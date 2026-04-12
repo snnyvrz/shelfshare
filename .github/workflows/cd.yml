@@ -105,7 +105,13 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          echo "Scanning host=$DEPLOY_HOST port=$DEPLOY_PORT"
+          ssh-keyscan -v -T 10 -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" 2>&1 | tee /tmp/keyscan.out
+          if [ ! -s /tmp/keyscan.out ]; then
+            echo "ERROR: ssh-keyscan returned no keys. Host may be unreachable on port $DEPLOY_PORT."
+            exit 1
+          fi
+          grep -v '^#' /tmp/keyscan.out >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
       - name: Upload deployment files
