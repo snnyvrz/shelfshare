@@ -1,0 +1,11 @@
+.git
+.gitignore
+.codex
+Dockerfile
+README*
+tmp
+dist
+bin
+vendor
+*.log
+*.out
