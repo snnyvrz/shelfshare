@@ -1,0 +1,4 @@
+*.sops.yaml merge=sops
+*.sops.yml merge=sops
+
+*.lock merge=ours

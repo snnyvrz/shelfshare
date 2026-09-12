@@ -2,67 +2,65 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - dev
+      - "feature/**"
   pull_request:
-    branches: [main]
 
-permissions:
-  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.25.4"
+  BUN_VERSION: "1.3.3"
+  NX_BASE: origin/main
+  NX_HEAD: HEAD
 
 jobs:
-  lint:
+  books-service_tests:
+    name: books-service unit tests & coverage (Nx + Go) & integration tests
     runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
 
-      - name: Set up Go
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
+          go-version: ${{ env.GO_VERSION }}
           cache: true
+          cache-dependency-path: apps/books-service/go.sum
 
-      - name: Check formatting
-        run: |
-          unformatted="$(gofmt -l .)"
-          if [ -n "$unformatted" ]; then
-            echo "These files need gofmt:"
-            echo "$unformatted"
-            exit 1
-          fi
+      - name: Install JS/TS dependencies
+        run: bun install --frozen-lockfile
 
-      - name: Vet
-        run: go vet ./...
+      - name: Generate Swagger docs via Nx
+        run: bun x nx run books-service:swagger
 
-  test:
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+      - name: Run books-service coverage via Nx
+        run: bun x nx run books-service:coverage
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
         with:
-          go-version-file: go.mod
-          cache: true
+          name: books-service-coverage
+          path: |
+            apps/books-service/coverage/coverage.out
+            apps/books-service/coverage/coverage.html
 
-      - name: Run tests
-        run: go test -race ./...
+      - name: Start Postgres
+        run: docker compose up -d postgres
 
-  docker:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: false
+      - name: Run integration tests
+        run: go test -tags=integration ./...
+        working-directory: apps/books-service
