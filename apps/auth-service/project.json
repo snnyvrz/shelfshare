@@ -9,7 +9,7 @@
             "executor": "nx:run-commands",
             "options": {
                 "cwd": "apps/auth-service",
-                "command": "bun --watch src/index.ts",
+                "command": "bun --env-file=../../.env.dev --watch src/index.ts",
                 "tsConfig": "apps/auth-service/tsconfig.dev.json"
             }
         }
