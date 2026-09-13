@@ -59,8 +59,15 @@ jobs:
             apps/books-service/coverage/coverage.html
 
       - name: Start Postgres
-        run: docker compose up -d postgres
+        run: docker compose up -d --wait postgres
 
       - name: Run integration tests
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_USER: shelfshare
+          POSTGRES_PASSWORD: shelfshare
+          POSTGRES_DB: shelfshare
+          TZ: UTC
         run: go test -tags=integration ./...
         working-directory: apps/books-service
