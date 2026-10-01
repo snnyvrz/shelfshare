@@ -11,6 +11,7 @@
     "plugins": ["@nx/js"],
     "projects": {
         "books-service": "apps/books-service",
-        "auth-service": "apps/auth-service"
+        "auth-service": "apps/auth-service",
+        "web": "apps/web"
     }
 }

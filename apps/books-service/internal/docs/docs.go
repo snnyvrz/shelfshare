@@ -54,6 +54,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new author with name and optional bio",
                 "consumes": [
                     "application/json"
@@ -85,6 +90,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Login required",
                         "schema": {
                             "$ref": "#/definitions/validation.ErrorResponse"
                         }
@@ -148,6 +159,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Delete an author by ID",
                 "consumes": [
                     "application/json"
@@ -178,6 +194,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/validation.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Login required",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Author not found",
                         "schema": {
@@ -193,6 +215,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Partially update an existing author",
                 "consumes": [
                     "application/json"
@@ -231,6 +258,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid ID or validation error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Login required",
                         "schema": {
                             "$ref": "#/definitions/validation.ErrorResponse"
                         }
@@ -341,6 +374,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new book with title, author, description and optional published date",
                 "consumes": [
                     "application/json"
@@ -372,6 +410,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Login required",
                         "schema": {
                             "$ref": "#/definitions/validation.ErrorResponse"
                         }
@@ -432,6 +476,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Delete a book by its UUID",
                 "produces": [
                     "application/json"
@@ -462,6 +511,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/validation.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Login required",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Book not found",
                         "schema": {
@@ -477,6 +532,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Partially update a book by its UUID",
                 "consumes": [
                     "application/json"
@@ -515,6 +575,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid ID or payload",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Login required",
                         "schema": {
                             "$ref": "#/definitions/validation.ErrorResponse"
                         }
@@ -783,6 +849,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Supply the auth-service JWT as: Bearer \u003ctoken\u003e. Required for all mutations.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

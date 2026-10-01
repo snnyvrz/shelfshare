@@ -12,11 +12,16 @@ package main
 
 // @host      localhost:8080
 // @BasePath  /api
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Supply the auth-service JWT as: Bearer <token>. Required for all mutations.
 
 import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/snnyvrz/shelfshare/apps/books-service/internal/auth"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/config"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/db"
 	docs "github.com/snnyvrz/shelfshare/apps/books-service/internal/docs"
@@ -54,7 +59,7 @@ func main() {
 	healthHandler := handler.NewHealthHandler(database, startTime, appVersion)
 	healthHandler.RegisterRoutes(e)
 
-	api := e.Group("/api")
+	api := e.Group("/api", auth.PublicReads(cfg.JWTSecret))
 	{
 		bookRepo := repository.NewGormBookRepository(database)
 		authorRepo := repository.NewAuthorRepository(database)

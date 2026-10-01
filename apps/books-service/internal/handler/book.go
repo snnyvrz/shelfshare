@@ -34,6 +34,8 @@ func (h *BookHandler) RegisterRoutes(r *gin.RouterGroup) {
 }
 
 // CreateBook godoc
+// @Security BearerAuth
+// @Failure 401 {object} validation.ErrorResponse "Login required"
 // @Summary      Create a book
 // @Description  Create a new book with title, author, description and optional published date
 // @Tags         books
@@ -234,6 +236,8 @@ func (h *BookHandler) GetBookByID(c *gin.Context) {
 }
 
 // UpdateBook godoc
+// @Security BearerAuth
+// @Failure 401 {object} validation.ErrorResponse "Login required"
 // @Summary      Update a book
 // @Description  Partially update a book by its UUID
 // @Tags         books
@@ -330,6 +334,8 @@ func (h *BookHandler) UpdateBook(c *gin.Context) {
 }
 
 // DeleteBook godoc
+// @Security BearerAuth
+// @Failure 401 {object} validation.ErrorResponse "Login required"
 // @Summary      Delete a book
 // @Description  Delete a book by its UUID
 // @Tags         books

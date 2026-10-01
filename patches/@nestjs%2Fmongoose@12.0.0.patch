@@ -1,0 +1,13 @@
+diff --git a/dist/mongoose-core.module.js b/dist/mongoose-core.module.js
+index 61e67f2e3732fd863b49af9ec47f4073bb541326..96576fa844740b4fee64d78579f26c33a380b8c7 100644
+--- a/dist/mongoose-core.module.js
++++ b/dist/mongoose-core.module.js
+@@ -13,7 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
+ var MongooseCoreModule_1;
+ import { Global, Inject, Module, } from '@nestjs/common';
+ import { ModuleRef } from '@nestjs/core';
+-import * as mongoose from 'mongoose';
++import mongoose from 'mongoose';
+ import { defer, lastValueFrom } from 'rxjs';
+ import { catchError } from 'rxjs/operators';
+ import { getConnectionToken, handleRetry } from './common/mongoose.utils.js';

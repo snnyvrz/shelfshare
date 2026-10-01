@@ -1,0 +1,30 @@
+{
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "name": "web",
+    "projectType": "application",
+    "sourceRoot": "apps/web/src",
+    "targets": {
+        "serve": {
+            "executor": "nx:run-commands",
+            "options": { "cwd": "apps/web", "command": "vite dev --host 0.0.0.0" }
+        },
+        "build": {
+            "executor": "nx:run-commands",
+            "outputs": ["{projectRoot}/build"],
+            "options": { "cwd": "apps/web", "command": "vite build" }
+        },
+        "check": {
+            "executor": "nx:run-commands",
+            "options": { "cwd": "apps/web", "command": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json" }
+        },
+        "lint": { "executor": "nx:run-commands", "options": { "command": "eslint apps/web" } },
+        "e2e": {
+            "executor": "nx:run-commands",
+            "options": { "command": "playwright test --config apps/web/playwright.config.ts" }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": { "command": "node --import tsx --test apps/web/tests/*.test.ts" }
+        }
+    }
+}

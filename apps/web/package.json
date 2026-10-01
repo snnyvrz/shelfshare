@@ -1,0 +1,5 @@
+{
+    "name": "@shelfshare/web",
+    "private": true,
+    "type": "module"
+}

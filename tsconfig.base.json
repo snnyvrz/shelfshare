@@ -13,9 +13,6 @@
         "resolveJsonModule": true,
         "outDir": "dist",
         "types": ["bun", "node"],
-        "baseUrl": ".",
-        "paths": {
-            "@auth/*": ["apps/auth-service/src/*"]
-        }
+        "baseUrl": "."
     }
 }

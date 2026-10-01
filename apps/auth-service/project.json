@@ -9,8 +9,23 @@
             "executor": "nx:run-commands",
             "options": {
                 "cwd": "apps/auth-service",
-                "command": "bun --env-file=../../.env.dev --watch src/index.ts",
-                "tsConfig": "apps/auth-service/tsconfig.dev.json"
+                "command": "node --env-file-if-exists=../../.env.dev --import tsx --watch src/main.ts"
+            }
+        },
+        "build": {
+            "executor": "nx:run-commands",
+            "outputs": ["{projectRoot}/dist"],
+            "options": {
+                "command": "tsc -p apps/auth-service/tsconfig.build.json"
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "env": {
+                    "TSX_TSCONFIG_PATH": "apps/auth-service/tsconfig.json"
+                },
+                "command": "node --import tsx --test apps/auth-service/src/**/*.test.ts"
             }
         }
     }

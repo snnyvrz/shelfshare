@@ -222,10 +222,16 @@ paths:
           description: Validation error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+        "401":
+          description: Login required
+          schema:
+            $ref: "#/definitions/validation.ErrorResponse"
         "500":
           description: Internal server error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+      security:
+        - BearerAuth: []
       summary: Create an author
       tags:
         - authors
@@ -249,6 +255,10 @@ paths:
           description: Invalid ID
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+        "401":
+          description: Login required
+          schema:
+            $ref: "#/definitions/validation.ErrorResponse"
         "404":
           description: Author not found
           schema:
@@ -257,6 +267,8 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+      security:
+        - BearerAuth: []
       summary: Delete an author
       tags:
         - authors
@@ -319,6 +331,10 @@ paths:
           description: Invalid ID or validation error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+        "401":
+          description: Login required
+          schema:
+            $ref: "#/definitions/validation.ErrorResponse"
         "404":
           description: Author not found
           schema:
@@ -327,6 +343,8 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+      security:
+        - BearerAuth: []
       summary: Update an author
       tags:
         - authors
@@ -417,10 +435,16 @@ paths:
           description: Validation error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+        "401":
+          description: Login required
+          schema:
+            $ref: "#/definitions/validation.ErrorResponse"
         "500":
           description: Internal server error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+      security:
+        - BearerAuth: []
       summary: Create a book
       tags:
         - books
@@ -444,6 +468,10 @@ paths:
           description: Invalid ID
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+        "401":
+          description: Login required
+          schema:
+            $ref: "#/definitions/validation.ErrorResponse"
         "404":
           description: Book not found
           schema:
@@ -452,6 +480,8 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+      security:
+        - BearerAuth: []
       summary: Delete a book
       tags:
         - books
@@ -512,6 +542,10 @@ paths:
           description: Invalid ID or payload
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+        "401":
+          description: Login required
+          schema:
+            $ref: "#/definitions/validation.ErrorResponse"
         "404":
           description: Book not found
           schema:
@@ -520,7 +554,16 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/validation.ErrorResponse"
+      security:
+        - BearerAuth: []
       summary: Update a book
       tags:
         - books
+securityDefinitions:
+  BearerAuth:
+    description: "Supply the auth-service JWT as: Bearer <token>. Required for all
+      mutations."
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

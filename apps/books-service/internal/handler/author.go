@@ -50,6 +50,8 @@ func toAuthorResponse(a model.Author) AuthorResponse {
 }
 
 // CreateAuthor godoc
+// @Security BearerAuth
+// @Failure 401 {object} validation.ErrorResponse "Login required"
 // @Summary      Create an author
 // @Description  Create a new author with name and optional bio
 // @Tags         authors
@@ -157,6 +159,8 @@ func (h *AuthorHandler) GetAuthorByID(c *gin.Context) {
 }
 
 // UpdateAuthor godoc
+// @Security BearerAuth
+// @Failure 401 {object} validation.ErrorResponse "Login required"
 // @Summary      Update an author
 // @Description  Partially update an existing author
 // @Tags         authors
@@ -223,6 +227,8 @@ func (h *AuthorHandler) UpdateAuthor(c *gin.Context) {
 }
 
 // DeleteAuthor godoc
+// @Security BearerAuth
+// @Failure 401 {object} validation.ErrorResponse "Login required"
 // @Summary      Delete an author
 // @Description  Delete an author by ID
 // @Tags         authors

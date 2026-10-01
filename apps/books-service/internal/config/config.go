@@ -10,6 +10,7 @@ import (
 )
 
 type Config struct {
+	JWTSecret string
 	GinMode   string
 	TZ        string
 	DBHost    string
@@ -53,6 +54,7 @@ func Load() *Config {
 	}
 
 	cfg := &Config{
+		JWTSecret: getenv("JWT_SECRET", ""),
 		GinMode:   getenv("GIN_MODE", "debug"),
 		TZ:        getenv("TZ", "UTC"),
 		DBHost:    getenv("DB_HOST", ""),
