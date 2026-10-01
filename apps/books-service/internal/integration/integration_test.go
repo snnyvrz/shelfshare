@@ -79,14 +79,21 @@ func TestMain(m *testing.M) {
 
 func resetDB(t *testing.T) {
 	t.Helper()
+	if err := truncateTestDB(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func truncateTestDB() error {
 	sqlDB, err := testDB.DB()
 	if err != nil {
-		t.Fatalf("get sql.DB failed: %v", err)
+		return fmt.Errorf("get sql.DB: %w", err)
 	}
 	_, err = sqlDB.Exec("TRUNCATE TABLE messages, conversations, requests, copies, blocks, books, authors RESTART IDENTITY CASCADE;")
 	if err != nil {
-		t.Fatalf("truncate failed: %v", err)
+		return fmt.Errorf("truncate test tables: %w", err)
 	}
+	return nil
 }
 
 func newTestServer() *httptest.Server {

@@ -36,11 +36,22 @@
         "integration-test": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "go test -tags=integration ./...",
+                "command": "go test -count=1 -tags=integration ./...",
                 "cwd": "apps/books-service"
             },
             "inputs": ["default"],
-            "outputs": []
+            "outputs": [],
+            "cache": false
+        },
+        "bdd": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "go test -count=1 -tags=integration -run '^TestBDD$' ./internal/integration",
+                "cwd": "apps/books-service"
+            },
+            "inputs": ["default"],
+            "outputs": [],
+            "cache": false
         },
         "coverage": {
             "executor": "nx:run-commands",

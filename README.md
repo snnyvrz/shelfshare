@@ -88,6 +88,47 @@ The launcher is in `scripts/dev.sh`. To start only the databases:
 docker compose --env-file .env.dev up -d --wait
 ```
 
+### Behavior-driven development (BDD)
+
+Executable Gherkin specifications for requests, reservations, handover, returns,
+cancellation and archiving live in
+`apps/books-service/internal/integration/features/`. Godog runs them through
+`TestBDD` in the existing PostgreSQL integration package. Lending steps call the
+production service; archive and shelf steps use in-process Gin routes with real
+JWT authentication. No running APIs, MongoDB or browser are required.
+
+Use a **disposable PostgreSQL database**: each scenario truncates lending and
+catalog tables. Do not point this suite at a database containing development data.
+For example, start an isolated container (no persistent volume):
+
+```sh
+docker run --detach --rm --name shelfshare-bdd-postgres \
+    -e POSTGRES_USER=shelfshare -e POSTGRES_PASSWORD=shelfshare \
+    -e POSTGRES_DB=shelfshare_bdd -p 127.0.0.1:55432:5432 postgres:18
+```
+
+Once PostgreSQL is ready, run from the repository root:
+
+```sh
+POSTGRES_HOST=localhost POSTGRES_PORT=55432 POSTGRES_USER=shelfshare \
+    POSTGRES_PASSWORD=shelfshare POSTGRES_DB=shelfshare_bdd TZ=UTC \
+    bun x nx run books-service:bdd
+```
+
+Use the same environment with `bun x nx run books-service:integration-test` to
+run all integration tests, including BDD. Both targets bypass caching and the
+scenarios run sequentially with fresh state. The suite uses `lending.Migrate`;
+undefined or pending steps fail the run. CI executes BDD once as part of its
+PostgreSQL integration stage, after Swagger generation and unit coverage.
+Stop the disposable database with `docker stop shelfshare-bdd-postgres`.
+
+For a new behavior, agree on the rule and concrete examples first, write a small
+scenario in reader-facing language, then implement its steps and behavior.
+Review scenarios alongside code changes. Use Scenario Outlines for permission
+and state variations; keep fixtures and HTTP details in step helpers. Fast unit
+tests, PostgreSQL concurrency tests and Playwright user journeys remain useful
+at their respective layers; feature files describe the agreed acceptance rules.
+
 ### Configuration
 
 `.env.dev.example` is a committed template containing safe development-only

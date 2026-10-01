@@ -61,7 +61,7 @@ jobs:
       - name: Start Postgres
         run: docker compose up -d --wait postgres
 
-      - name: Run integration tests
+      - name: Run integration tests including BDD scenarios
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: "5432"
@@ -69,5 +69,5 @@ jobs:
           POSTGRES_PASSWORD: shelfshare
           POSTGRES_DB: shelfshare
           TZ: UTC
-        run: go test -tags=integration ./...
+        run: go test -count=1 -tags=integration ./...
         working-directory: apps/books-service
