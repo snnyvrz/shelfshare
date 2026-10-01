@@ -359,6 +359,11 @@ func (h *BookHandler) DeleteBook(c *gin.Context) {
 	}
 
 	if err := h.repo.Delete(c.Request.Context(), bookID); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			writeError(c, http.StatusConflict, "BOOK_IN_USE", "This catalog title has physical copies and cannot be deleted")
+			return
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeError(c, http.StatusNotFound,
 				"BOOK_NOT_FOUND",

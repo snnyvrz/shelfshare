@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { visit } from "./helpers";
 
 test("a reader can browse, join, contribute, filter, paginate, and log out", async ({ page, request }, testInfo) => {
     const stamp = `${Date.now()}`;
@@ -14,20 +15,21 @@ test("a reader can browse, join, contribute, filter, paginate, and log out", asy
     const browserErrors: string[] = [];
     page.on("pageerror", (error) => browserErrors.push(error.message));
 
-    await page.goto("/");
+    await visit(page, "/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("A shared shelf.");
     await page.screenshot({ path: testInfo.outputPath("home-desktop.png"), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath("home-mobile.png"), fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/books/new");
+    await visit(page, "/books/new");
     await expect(page).toHaveURL(/\/login\?returnTo=/);
     expect((await request.post(`${booksApi}/books`, { data: {} })).status()).toBe(401);
     expect((await request.patch(`${booksApi}/authors/not-an-id`, { data: {} })).status()).toBe(401);
 
     try {
-        await page.goto("/register");
+        await visit(page, "/register");
+        await page.getByLabel("Public display name").fill("Catalog reader");
         await page.getByLabel("Email address").fill(email);
         await page.getByLabel("Password", { exact: true }).fill(password);
         await page.getByRole("button", { name: "Join the shelf" }).click();
@@ -39,7 +41,7 @@ test("a reader can browse, join, contribute, filter, paginate, and log out", asy
         expect(session?.httpOnly).toBe(true);
         expect(session?.sameSite).toBe("Lax");
 
-        await page.goto("/authors/new");
+        await visit(page, "/authors/new");
         await page.getByLabel("Author name").fill(authorName);
         await page.getByLabel("Biography").fill("A writer for the automated reader journey.");
         await page.getByRole("button", { name: "Add author", exact: true }).click();
@@ -51,7 +53,7 @@ test("a reader can browse, join, contribute, filter, paginate, and log out", asy
         await page.getByRole("button", { name: "Save changes" }).click();
         await expect(page.getByText("An updated biography.", { exact: true })).toBeVisible();
 
-        await page.goto("/books/new");
+        await visit(page, "/books/new");
         await page.getByLabel("Book title").fill(title);
         await page.getByLabel("Author *", { exact: true }).selectOption(authorId);
         await page.getByLabel("Publication date").fill("2020-06-15");
@@ -80,12 +82,12 @@ test("a reader can browse, join, contribute, filter, paginate, and log out", asy
             expect(created.ok()).toBe(true);
             ids.push((await created.json()).data.id);
         }
-        await page.goto(`/books?author_id=${authorId}&sort=title_asc`);
+        await visit(page, `/books?author_id=${authorId}&sort=title_asc`);
         await expect(page.locator(".book-card")).toHaveCount(12);
         await page.getByRole("link", { name: "Next →", exact: true }).click();
         await expect(page).toHaveURL(/page=2/);
         await expect(page.locator(".book-card")).toHaveCount(2);
-        await page.goto(`/books?author_id=${authorId}&published_after=2021-01-01&published_before=2021-12-31`);
+        await visit(page, `/books?author_id=${authorId}&published_after=2021-01-01&published_before=2021-12-31`);
         await expect(page.getByText("13 books on this shelf")).toBeVisible();
         await page.getByLabel("Search the shelf").fill(title);
         await page.getByRole("button", { name: "Search", exact: true }).click();
@@ -94,13 +96,13 @@ test("a reader can browse, join, contribute, filter, paginate, and log out", asy
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         await page.screenshot({ path: testInfo.outputPath("catalog-mobile.png"), fullPage: true });
 
-        await page.goto(`/books/${bookId}`);
+        await visit(page, `/books/${bookId}`);
         await page.getByRole("button", { name: "Delete book", exact: true }).click();
         await page.getByRole("button", { name: "Yes, delete", exact: true }).click();
         await expect(page).toHaveURL(/\/books$/);
         await page.getByRole("button", { name: "Log out" }).click();
         await expect(page.getByRole("link", { name: "Log in", exact: true })).toBeVisible();
-        await page.goto("/login");
+        await visit(page, "/login");
         await page.getByLabel("Email address").fill(email);
         await page.getByLabel("Password", { exact: true }).fill("wrong-password");
         await page.getByRole("button", { name: "Log in", exact: true }).click();
@@ -110,7 +112,7 @@ test("a reader can browse, join, contribute, filter, paginate, and log out", asy
         await expect(page).toHaveURL(/\/books$/);
         for (const id of ids)
             await request.delete(`${booksApi}/books/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-        await page.goto(`/authors/${authorId}`);
+        await visit(page, `/authors/${authorId}`);
         await page.getByRole("button", { name: "Delete author", exact: true }).click();
         await page.getByRole("button", { name: "Yes, delete", exact: true }).click();
         await expect(page).toHaveURL(/\/authors$/);

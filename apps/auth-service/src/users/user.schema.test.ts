@@ -14,6 +14,12 @@ describe("User JSON serialization", () => {
             updatedAt: new Date("2026-01-02T00:00:00.000Z"),
         });
 
-        assert.deepEqual(user.toJSON(), { email: "reader@example.com", id: "0123456789abcdef01234567" });
+        assert.deepEqual(user.toJSON(), {
+            email: "reader@example.com",
+            id: "0123456789abcdef01234567",
+            displayName: "Reader",
+            bio: "",
+            location: "",
+        });
     });
 });

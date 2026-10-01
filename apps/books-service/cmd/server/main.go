@@ -26,7 +26,7 @@ import (
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/db"
 	docs "github.com/snnyvrz/shelfshare/apps/books-service/internal/docs"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/handler"
-	"github.com/snnyvrz/shelfshare/apps/books-service/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-service/internal/lending"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/repository"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -52,7 +52,7 @@ func main() {
 
 	database := db.ConnectWithRetry(cfg)
 
-	if err := database.AutoMigrate(&model.Author{}, &model.Book{}); err != nil {
+	if err := lending.Migrate(database); err != nil {
 		panic(err)
 	}
 
@@ -70,6 +70,10 @@ func main() {
 		bookHandler.RegisterRoutes(api)
 		authorHandler.RegisterRoutes(api)
 	}
+
+	lendingService := &lending.Service{DB: database}
+	lending.New(lendingService)
+	lendingService.Register(e.Group("/api"), e.Group("/api", auth.Required(cfg.JWTSecret)))
 
 	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

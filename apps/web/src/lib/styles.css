@@ -631,6 +631,126 @@ hr {
 .error-page {
     margin-top: 60px;
 }
+.copy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 24px;
+    margin: 28px 0;
+}
+.copy-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.stack label,
+.copy-card label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.check-label {
+    flex-direction: row !important;
+    align-items: center;
+}
+.check-label input {
+    width: auto;
+}
+.narrow {
+    max-width: 720px;
+    margin-inline: auto;
+}
+.message-body {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.inbox-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    gap: 24px;
+}
+.conversation-panel,
+.inbox-list {
+    min-width: 0;
+}
+.conversation-link {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 8px;
+    border-bottom: 1px solid var(--border);
+}
+.conversation-link.chosen {
+    background: #edf0e7;
+}
+.message-preview {
+    font-size: 0.85rem;
+    color: #535d52;
+    overflow-wrap: anywhere;
+}
+.message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding: 20px 0;
+}
+.message-bubble {
+    border-radius: 12px;
+    background: #f2f0e9;
+    padding: 12px 18px;
+    width: fit-content;
+    max-width: 90%;
+}
+.message-bubble.mine {
+    background: #e4eadb;
+    align-self: flex-end;
+}
+.message-bubble p {
+    margin: 4px 0;
+}
+.typing-indicator {
+    min-height: 1.5em;
+}
+.message-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    max-width: calc(100vw - 40px);
+    background: #fffdf7;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    box-shadow: 0 4px 20px #244b3b20;
+    z-index: 10;
+}
+.unread-badge {
+    background: var(--green);
+    color: white;
+    border-radius: 12px;
+    padding: 2px 7px;
+    font-size: 0.75rem;
+    width: fit-content;
+    margin-left: 4px;
+}
+.header-inner nav {
+    flex-wrap: wrap;
+    gap: 18px;
+}
+@media (max-width: 760px) {
+    .inbox-layout {
+        grid-template-columns: 1fr;
+    }
+    .inbox-list {
+        max-height: 250px;
+        overflow-y: auto;
+    }
+}
 .skip-link {
     position: absolute;
     left: 12px;

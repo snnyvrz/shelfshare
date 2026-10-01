@@ -7,7 +7,7 @@
 <svelte:head
     ><title>ShelfShare · A world of stories</title><meta
         name="description"
-        content="Discover books, meet their authors, and help grow a shared collection of stories."
+        content="Share the physical books on your shelf, borrow from other readers, and arrange exchanges through real-time messages."
     /></svelte:head
 >
 <section class="hero">
@@ -15,15 +15,15 @@
         <p class="eyebrow">YOUR NEXT CHAPTER STARTS HERE</p>
         <h1>A shared shelf.<br />A world of <em>stories.</em></h1>
         <p class="hero-description">
-            Good books deserve good company. Explore the collection, discover an author, and leave something wonderful
-            for the next reader.
+            Your next favorite might be on a neighbor's shelf. List the physical books you own, borrow from other
+            readers, and arrange an exchange through real-time messages.
         </p>
         <div class="actions">
-            <a class="button" href="/books">Explore the collection <span aria-hidden="true">↗</span></a><a
-                href="/authors">Meet the authors →</a
+            <a class="button" href="/shelves">Explore readers' shelves <span aria-hidden="true">↗</span></a><a
+                href="/my-shelf">Build my shelf →</a
             >
         </div>
-        <p class="hero-note">An open collection, thoughtfully grown together.</p>
+        <p class="hero-note">Request a copy. Meet its reader. Return it for the next chapter.</p>
     </div>
     <div class="hero-art" aria-hidden="true">
         <div class="art-book art-book-one">
@@ -57,8 +57,8 @@
     {:else}
         <div class="empty-state">
             <h3>Every library starts with one book</h3>
-            <p>Help us write the first chapter of this collection.</p>
-            <a class="button" href="/books/new">Add the first book</a>
+            <p>Put your physical books on your profile and share them with another reader.</p>
+            <a class="button" href="/my-shelf">Add my first copy</a>
         </div>
     {/if}
 </section>
@@ -66,7 +66,7 @@
     <div>
         <p class="eyebrow">A COLLECTION THAT BELONGS TO ALL OF US</p>
         <h2>Found a book worth sharing?</h2>
-        <p>Add its story to the shelf. Someone's next favorite could be yours.</p>
+        <p>Add your physical copy, choose whether to lend it, and connect with its next reader.</p>
     </div>
-    <a class="button" href="/books/new">Add a book +</a>
+    <a class="button" href="/my-shelf">Add my copy +</a>
 </section>

@@ -33,6 +33,8 @@
         "typescript": "^5"
     },
     "scripts": {
+        "dev": "sh scripts/dev.sh",
+        "dev:stop": "docker compose --env-file .env.dev stop",
         "prepare": "husky"
     },
     "dependencies": {

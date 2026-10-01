@@ -15,11 +15,20 @@ type Claims struct {
 
 // PublicReads permits catalog browsing but requires a signed session for mutations.
 func PublicReads(secret string) gin.HandlerFunc {
+	return middleware(secret, true)
+}
+
+// Required authenticates reads as well as mutations on private resources.
+func Required(secret string) gin.HandlerFunc {
+	return middleware(secret, false)
+}
+
+func middleware(secret string, public bool) gin.HandlerFunc {
 	if secret == "" {
 		panic("JWT_SECRET environment variable is required")
 	}
 	return func(c *gin.Context) {
-		if c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead || c.Request.Method == http.MethodOptions {
+		if public && (c.Request.Method == http.MethodGet || c.Request.Method == http.MethodHead || c.Request.Method == http.MethodOptions) {
 			c.Next()
 			return
 		}
@@ -38,6 +47,7 @@ func PublicReads(secret string) gin.HandlerFunc {
 		}
 		c.Set("user_id", claims.Subject)
 		c.Set("user_email", claims.Email)
+		c.Set("expires_at", claims.ExpiresAt.Time)
 		c.Next()
 	}
 }
@@ -45,6 +55,6 @@ func PublicReads(secret string) gin.HandlerFunc {
 func unauthorized(c *gin.Context) {
 	c.Header("WWW-Authenticate", "Bearer")
 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-		"code": "UNAUTHORIZED", "message": "A valid login is required to edit the collection",
+		"code": "UNAUTHORIZED", "message": "A valid login is required",
 	})
 }

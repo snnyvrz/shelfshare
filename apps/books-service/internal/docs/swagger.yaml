@@ -147,6 +147,153 @@ definitions:
         minLength: 1
         type: string
     type: object
+  lending.Conversation:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      initiator:
+        type: string
+      lastMessage:
+        $ref: "#/definitions/lending.Message"
+      peerReadAt:
+        type: string
+      request:
+        $ref: "#/definitions/lending.Request"
+      requestId:
+        type: string
+      status:
+        type: string
+      unread:
+        type: integer
+      updatedAt:
+        type: string
+      userA:
+        type: string
+      userB:
+        type: string
+    type: object
+  lending.Copy:
+    properties:
+      archived:
+        type: boolean
+      availability:
+        type: string
+      book:
+        $ref: "#/definitions/model.Book"
+      bookId:
+        type: string
+      condition:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      lendable:
+        type: boolean
+      notes:
+        type: string
+      ownerId:
+        type: string
+      updatedAt:
+        type: string
+      visible:
+        type: boolean
+    type: object
+  lending.Message:
+    properties:
+      body:
+        type: string
+      conversationId:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      senderId:
+        type: string
+    type: object
+  lending.Request:
+    properties:
+      acceptedAt:
+        type: string
+      borrowedAt:
+        type: string
+      borrowerId:
+        type: string
+      closedAt:
+        type: string
+      copy:
+        $ref: "#/definitions/lending.Copy"
+      copyId:
+        type: string
+      createdAt:
+        type: string
+      dueAt:
+        type: string
+      id:
+        type: string
+      message:
+        type: string
+      ownerId:
+        type: string
+      returnPendingAt:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  lending.copyInput:
+    properties:
+      bookId:
+        type: string
+      condition:
+        type: string
+      lendable:
+        type: boolean
+      notes:
+        type: string
+      visible:
+        type: boolean
+    type: object
+  model.Author:
+    properties:
+      bio:
+        type: string
+      books:
+        items:
+          $ref: "#/definitions/model.Book"
+        type: array
+      createdAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.Book:
+    properties:
+      author:
+        $ref: "#/definitions/model.Author"
+      authorID:
+        type: string
+      createdAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      publishedAt:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   validation.ErrorResponse:
     properties:
       code:
@@ -348,6 +495,50 @@ paths:
       summary: Update an author
       tags:
         - authors
+  /blocks:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: List readers you have blocked
+      tags:
+        - Messaging
+  /blocks/{user}:
+    delete:
+      parameters:
+        - description: User ID
+          in: path
+          name: user
+          required: true
+          type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+        - BearerAuth: []
+      summary: Unblock a reader
+      tags:
+        - Messaging
+    post:
+      parameters:
+        - description: User ID
+          in: path
+          name: user
+          required: true
+          type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+        - BearerAuth: []
+      summary: Block direct messages and presence sharing from a reader
+      tags:
+        - Messaging
   /books:
     get:
       description: Get all books
@@ -559,6 +750,369 @@ paths:
       summary: Update a book
       tags:
         - books
+  /conversations:
+    get:
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: List your private conversations and unread counts
+      tags:
+        - Messaging
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: userId
+          in: body
+          name: recipient
+          required: true
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/lending.Conversation"
+      security:
+        - BearerAuth: []
+      summary: Start or find a direct conversation
+      tags:
+        - Messaging
+  /conversations/{id}:
+    get:
+      parameters:
+        - description: Conversation ID
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/lending.Conversation"
+      security:
+        - BearerAuth: []
+      summary: Read a conversation as a participant
+      tags:
+        - Messaging
+  /conversations/{id}/{action}:
+    post:
+      parameters:
+        - description: Conversation ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: accept, decline or read
+          in: path
+          name: action
+          required: true
+          type: string
+      responses:
+        "204":
+          description: No Content
+      security:
+        - BearerAuth: []
+      summary: Accept/decline a message request or mark a conversation read
+      tags:
+        - Messaging
+  /conversations/{id}/messages:
+    get:
+      parameters:
+        - description: Conversation ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: RFC3339 timestamp cursor
+          in: query
+          name: before
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: Read private message history (newest page first)
+      tags:
+        - Messaging
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: Conversation ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: id and body
+          in: body
+          name: message
+          required: true
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/lending.Message"
+      security:
+        - BearerAuth: []
+      summary: Send a message with a client-generated UUID (idempotent retry)
+      tags:
+        - Messaging
+  /copies:
+    get:
+      parameters:
+        - description: Shelf owner
+          in: query
+          name: ownerId
+          type: string
+        - description: Catalog book
+          in: query
+          name: bookId
+          type: string
+        - description: Page (50 copies)
+          in: query
+          name: page
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List physical copies
+      tags:
+        - Shelves
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: Copy details
+          in: body
+          name: copy
+          required: true
+          schema:
+            $ref: "#/definitions/lending.copyInput"
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/lending.Copy"
+      security:
+        - BearerAuth: []
+      summary: Add a physical copy to your shelf
+      tags:
+        - Shelves
+  /copies/{id}:
+    delete:
+      parameters:
+        - description: Copy ID
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "409":
+          description: Copy is reserved or on loan
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+        - BearerAuth: []
+      summary: Archive your unoccupied copy, preserving history
+      tags:
+        - Shelves
+    patch:
+      consumes:
+        - application/json
+      parameters:
+        - description: Copy ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Condition, notes, visibility and lending preference
+          in: body
+          name: details
+          required: true
+          schema:
+            $ref: "#/definitions/lending.copyInput"
+      responses:
+        "204":
+          description: No Content
+      security:
+        - BearerAuth: []
+      summary: Edit your physical copy (ownership and catalog title are immutable)
+      tags:
+        - Shelves
+  /copies/{id}/requests:
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: Copy ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Request message
+          in: body
+          name: request
+          required: true
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/lending.Request"
+      security:
+        - BearerAuth: []
+      summary: Request to borrow a physical copy
+      tags:
+        - Borrowing
+  /me/copies:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: List your private shelf, including hidden copies
+      tags:
+        - Shelves
+  /request-conversations/{id}:
+    get:
+      parameters:
+        - description: Borrow request ID
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/lending.Conversation"
+      security:
+        - BearerAuth: []
+      summary: Find a borrowing conversation as a participant
+      tags:
+        - Messaging
+  /requests:
+    get:
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: List your borrowing and lending requests
+      tags:
+        - Borrowing
+  /requests/{id}/{action}:
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - description: Request ID
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: Action
+          in: path
+          name: action
+          required: true
+          type: string
+        - description: Optional RFC3339 dueAt
+          in: body
+          name: terms
+          required: true
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      responses:
+        "204":
+          description: No Content
+      security:
+        - BearerAuth: []
+      summary: Change borrowing status (accept, decline, cancel, handover, return,
+        confirm-return)
+      tags:
+        - Borrowing
+  /ws-ticket:
+    post:
+      consumes:
+        - application/json
+      description: "Connect to /api/ws?ticket=... within 30 seconds. The Origin must
+        match the ticket. Events: message, requests, conversations, accept, decline,
+        read, presence, typing, blocked, ack, error. Send message with conversationId,
+        id and body; presence/typing with conversationId. Connections expire with
+        the JWT."
+      parameters:
+        - description: Browser origin
+          in: body
+          name: origin
+          required: true
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+        - BearerAuth: []
+      summary: Obtain a single-use WebSocket connection ticket
+      tags:
+        - Messaging
 securityDefinitions:
   BearerAuth:
     description: "Supply the auth-service JWT as: Bearer <token>. Required for all

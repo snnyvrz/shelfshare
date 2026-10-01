@@ -18,7 +18,7 @@ export async function api<T>(event: RequestEvent, path: string, options: Request
     const headers = new Headers(options.headers);
     headers.set("Accept", "application/json");
     if (options.body) headers.set("Content-Type", "application/json");
-    if (!auth && event.locals.token) headers.set("Authorization", `Bearer ${event.locals.token}`);
+    if (event.locals.token) headers.set("Authorization", `Bearer ${event.locals.token}`);
     let response: Response;
     try {
         response = await event.fetch(`${base.replace(/\/$/, "")}${path}`, {

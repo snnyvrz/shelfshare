@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/model"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/repository"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/validation"
@@ -254,6 +255,11 @@ func (h *AuthorHandler) DeleteAuthor(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	if err := h.repo.Delete(ctx, id); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			writeError(c, http.StatusConflict, "AUTHOR_IN_USE", "This author has catalog books and cannot be deleted")
+			return
+		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeError(c, http.StatusNotFound,
 				"AUTHOR_NOT_FOUND",

@@ -26,7 +26,16 @@ export const actions: Actions = {
             result = await api(
                 event,
                 `/${event.params.mode}`,
-                { method: "POST", body: JSON.stringify({ email, password }) },
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        ...(event.params.mode === "register"
+                            ? { displayName: String(form.get("displayName") || "Reader") }
+                            : {}),
+                    }),
+                },
                 true
             );
         } catch (cause) {

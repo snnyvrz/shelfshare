@@ -12,8 +12,7 @@
         <p class="eyebrow">A PLACE FOR YOUR LOVE OF BOOKS</p>
         <h1>{registering ? "Every reader brings a new story." : "Welcome back to the shelf."}</h1>
         <p class="muted">
-            Join a growing collection of books and the people who love them. Discover something new. Share something
-            wonderful.
+            Put your physical books on your profile, borrow from other readers, and connect in real time.
         </p>
         <span class="auth-decoration" aria-hidden="true">✳</span>
     </div>
@@ -32,8 +31,18 @@
         }}
     >
         <h2>{registering ? "Create your account" : "Make yourself at home"}</h2>
-        <p class="muted">{registering ? "Your next chapter starts here." : "Log in to help grow the collection."}</p>
+        <p class="muted">
+            {registering ? "Your next chapter starts here." : "Log in to your shelf, loans, and conversations."}
+        </p>
         {#if form?.message}<div class="alert" role="alert">{form.message}</div>{/if}
+        {#if registering}<label for="displayName">Public display name</label><input
+                id="displayName"
+                name="displayName"
+                required
+                maxlength="80"
+                autocomplete="nickname"
+                placeholder="How other readers know you"
+            />{/if}
         <label for="email">Email address</label><input
             id="email"
             name="email"

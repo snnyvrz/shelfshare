@@ -2,8 +2,10 @@ import { fail, redirect } from "@sveltejs/kit";
 import { api, ApiError, pageError, requireUser } from "$lib/server/api";
 import type { Author, Book, Collection } from "$lib/types";
 import type { Actions, PageServerLoad } from "./$types";
+import { borrow, copyList } from "$lib/server/community";
 
 export const load: PageServerLoad = async (event) => {
+    event.depends("shelfshare:community");
     const collection = event.params.collection as Collection;
     try {
         const record = await api<{ data: Book | Author }>(
@@ -14,12 +16,16 @@ export const load: PageServerLoad = async (event) => {
             collection,
             book: collection === "books" ? (record.data as Book) : null,
             author: collection === "authors" ? (record.data as Author) : null,
+            ...(collection === "books"
+                ? await copyList(event, `/copies?bookId=${encodeURIComponent(event.params.id)}`)
+                : { copies: [], profiles: {}, total: 0 }),
         };
     } catch (cause) {
         pageError(cause);
     }
 };
 export const actions: Actions = {
+    borrow,
     delete: async (event) => {
         requireUser(event);
         try {

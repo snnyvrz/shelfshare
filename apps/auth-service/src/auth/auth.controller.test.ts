@@ -5,6 +5,7 @@ import { UnauthorizedException, type INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
+import { JwtModule, JwtService } from "@nestjs/jwt";
 
 describe("AuthController API", () => {
     let app: INestApplication;
@@ -12,6 +13,7 @@ describe("AuthController API", () => {
 
     before(async () => {
         const module = await Test.createTestingModule({
+            imports: [JwtModule.register({ secret: "profile-test-secret" })],
             controllers: [AuthController],
             providers: [
                 {
@@ -24,6 +26,13 @@ describe("AuthController API", () => {
                             }
                             return { token: "login-token", user: { email } };
                         },
+                        profile: async (id: string) => ({
+                            id,
+                            displayName: "Reader",
+                            bio: "Books to share",
+                            location: "London",
+                        }),
+                        updateProfile: async (id: string, body: Record<string, unknown>) => ({ id, ...body }),
                     },
                 },
             ],
@@ -88,5 +97,31 @@ describe("AuthController API", () => {
 
         assert.equal(response.status, 401);
         assert.deepEqual(await response.json(), { message: "Invalid credentials" });
+    });
+
+    it("keeps profiles public and requires a verified identity for profile changes", async () => {
+        const response = await fetch(`${baseUrl}/api/auth/profiles/0123456789abcdef01234567`);
+        assert.equal(response.status, 200);
+        const profile = await response.json();
+        assert.equal(profile.displayName, "Reader");
+        assert.equal("email" in profile, false);
+        assert.equal((await fetch(`${baseUrl}/api/auth/me`)).status, 401);
+        assert.equal(
+            (
+                await fetch(`${baseUrl}/api/auth/me`, {
+                    method: "PATCH",
+                    headers: { "content-type": "application/json" },
+                    body: "{}",
+                })
+            ).status,
+            401
+        );
+        const token = new JwtService({ secret: "profile-test-secret" }).sign(
+            { sub: "0123456789abcdef01234567", email: "private@example.com" },
+            { expiresIn: 60 }
+        );
+        const mine = await fetch(`${baseUrl}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        assert.equal(mine.status, 200);
+        assert.equal((await mine.json()).id, "0123456789abcdef01234567");
     });
 });

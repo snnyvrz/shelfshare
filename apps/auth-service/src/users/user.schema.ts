@@ -17,6 +17,15 @@ export type UserDocument = HydratedDocument<User>;
     },
 })
 export class User {
+    @Prop({ type: String, default: "Reader", trim: true, maxlength: 80 })
+    displayName!: string;
+
+    @Prop({ type: String, default: "", maxlength: 1000 })
+    bio!: string;
+
+    @Prop({ type: String, default: "", maxlength: 120 })
+    location!: string;
+
     @Prop({ type: String, required: true, unique: true, lowercase: true, trim: true })
     email!: string;
 

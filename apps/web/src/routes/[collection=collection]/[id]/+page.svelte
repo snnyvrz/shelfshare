@@ -1,6 +1,7 @@
 <script lang="ts">
     import { enhance } from "$app/forms";
     import BookCard from "$lib/components/BookCard.svelte";
+    import CopyCard from "$lib/components/CopyCard.svelte";
     import type { PageProps } from "./$types";
     let { data, form }: PageProps = $props();
     let deleting = $state(false);
@@ -12,6 +13,7 @@
 <svelte:head><title>{name} · ShelfShare</title></svelte:head>
 <a class="back-link" href="/{data.collection}">← Back to {data.collection}</a>
 {#if form?.message}<div class="alert" role="alert">{form.message}</div>{/if}
+{#if form?.success}<p class="panel" role="status">{form.success} <a href="/requests">View requests →</a></p>{/if}
 <section class="detail-layout">
     <aside>
         {#if data.book}<BookCard book={data.book} />{:else}<div class="author-portrait" aria-hidden="true">
@@ -77,6 +79,22 @@
         {/if}
     </div>
 </section>
+{#if data.book}<section class="section">
+        <div class="section-heading">
+            <h2>Readers' physical copies</h2>
+            <a class="button" href="/my-shelf?book={data.book.id}">Add my copy</a>
+        </div>
+        <div class="copy-grid">
+            {#each data.copies as copy (copy.id)}<CopyCard
+                    {copy}
+                    owner={data.profiles[copy.ownerId]}
+                    userId={data.user?.id}
+                />{/each}
+        </div>
+        {#if !data.copies.length}<p class="empty-state">
+                No readers have listed a physical copy yet. Add yours to start sharing.
+            </p>{/if}
+    </section>{/if}
 {#if data.author}<section class="section">
         <div class="section-heading">
             <h2>On the shelf</h2>

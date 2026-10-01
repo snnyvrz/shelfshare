@@ -15,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/handler"
-	"github.com/snnyvrz/shelfshare/apps/books-service/internal/model"
+	"github.com/snnyvrz/shelfshare/apps/books-service/internal/lending"
 	"github.com/snnyvrz/shelfshare/apps/books-service/internal/repository"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -52,7 +52,7 @@ func TestMain(m *testing.M) {
 	}
 	testDB = db
 
-	if err := db.AutoMigrate(&model.Author{}, &model.Book{}); err != nil {
+	if err := lending.Migrate(db); err != nil {
 		panic("failed to migrate: " + err.Error())
 	}
 
@@ -83,7 +83,7 @@ func resetDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get sql.DB failed: %v", err)
 	}
-	_, err = sqlDB.Exec("TRUNCATE TABLE books, authors RESTART IDENTITY CASCADE;")
+	_, err = sqlDB.Exec("TRUNCATE TABLE messages, conversations, requests, copies, blocks, books, authors RESTART IDENTITY CASCADE;")
 	if err != nil {
 		t.Fatalf("truncate failed: %v", err)
 	}
