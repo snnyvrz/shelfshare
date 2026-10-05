@@ -1,7 +1,8 @@
 import { writable } from "svelte/store";
 
 export type RealtimeEvent = { event: string; data: Record<string, unknown> | null };
-export const connection = writable("Disconnected");
+export type ConnectionState = "disconnected" | "offline" | "reconnecting" | "connecting" | "expired" | "connected";
+export const connection = writable<ConnectionState>("disconnected");
 export const realtimeEvent = writable<RealtimeEvent | null>(null);
 export const unread = writable(0);
 let socket: WebSocket | null = null;
@@ -52,15 +53,15 @@ export function startRealtime(onChange: () => void) {
     async function connect() {
         if (stopped) return;
         if (!navigator.onLine) {
-            connection.set("Offline");
+            connection.set("offline");
             return;
         }
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
-        connection.set(attempts ? "Reconnecting…" : "Connecting…");
+        connection.set(attempts ? "reconnecting" : "connecting");
         try {
             const response = await fetch("/api/realtime-ticket", { method: "POST" });
             if (response.status === 401) {
-                connection.set("Session expired — log in again");
+                connection.set("expired");
                 return;
             }
             if (!response.ok) throw new Error("Connection unavailable");
@@ -70,7 +71,7 @@ export function startRealtime(onChange: () => void) {
             socket = ws;
             ws.onopen = () => {
                 attempts = 0;
-                connection.set("Connected");
+                connection.set("connected");
                 void refreshUnread();
                 if (connectedBefore) onChange();
                 connectedBefore = true;
@@ -106,15 +107,15 @@ export function startRealtime(onChange: () => void) {
         if (stopped) return;
         if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) return;
         if (!navigator.onLine) {
-            connection.set("Offline");
+            connection.set("offline");
             return;
         }
-        connection.set("Reconnecting…");
+        connection.set("reconnecting");
         timer = setTimeout(connect, Math.min(30000, 1000 * 2 ** Math.min(attempts++, 5)) + Math.random() * 500);
     }
     const offline = () => {
         socket?.close();
-        connection.set("Offline");
+        connection.set("offline");
     };
     const online = () => {
         clearTimeout(timer);
@@ -133,6 +134,6 @@ export function startRealtime(onChange: () => void) {
         socket = null;
         unread.set(0);
         realtimeEvent.set(null);
-        connection.set("Disconnected");
+        connection.set("disconnected");
     };
 }

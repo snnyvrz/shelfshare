@@ -1,6 +1,22 @@
 import { env } from "$env/dynamic/private";
 import { error, redirect, type RequestEvent } from "@sveltejs/kit";
 
+const errorMessages: Record<string, string> = {
+    UNAUTHORIZED: "A valid login is required",
+    VALIDATION_ERROR: "Please check the highlighted fields.",
+    INVALID_REQUEST_BODY: "Invalid input",
+    BOOK_NOT_FOUND: "Book not found",
+    AUTHOR_NOT_FOUND: "Author not found",
+    INVALID_BOOK_ID: "Invalid book ID",
+    AUTHOR_INVALID_ID: "Invalid author ID",
+    INVALID_AUTHOR_ID: "Invalid author ID",
+    INVALID_PUBLISHED_AFTER: "Enter a valid date.",
+    INVALID_PUBLISHED_BEFORE: "Enter a valid date.",
+    NO_FIELDS_TO_UPDATE: "At least one field must be provided to update.",
+    BOOK_IN_USE: "This catalog title has physical copies and cannot be deleted",
+    AUTHOR_IN_USE: "This author has catalog books and cannot be deleted",
+};
+
 export class ApiError extends Error {
     constructor(
         public status: number,
@@ -33,9 +49,21 @@ export async function api<T>(event: RequestEvent, path: string, options: Request
     const body = await response.json().catch(() => null);
     if (!response.ok) {
         const fields: Record<string, string> = {};
-        for (const entry of body?.errors ?? []) fields[entry.field] = entry.message;
+        for (const entry of body?.errors ?? [])
+            fields[entry.field] =
+                entry.rule === "required"
+                    ? "This field is required."
+                    : entry.rule
+                      ? "This field is invalid."
+                      : entry.message;
         const message = Array.isArray(body?.message) ? body.message.join(". ") : body?.message;
-        throw new ApiError(response.status, message || "The request could not be completed.", fields);
+        throw new ApiError(
+            response.status,
+            errorMessages[body?.code] ||
+                (body?.code?.endsWith("_FAILED") ? "The request could not be completed." : message) ||
+                "The request could not be completed.",
+            fields
+        );
     }
     return body as T;
 }

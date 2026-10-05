@@ -1,6 +1,7 @@
 import { fail, redirect, type RequestEvent } from "@sveltejs/kit";
 import { api, ApiError, requireUser } from "./api";
 import type { Collection, FormValues } from "$lib/types";
+import { readDate } from "$lib/i18n/calendar";
 
 export async function save(event: RequestEvent, collection: Collection, id?: string) {
     requireUser(event);
@@ -10,6 +11,7 @@ export async function save(event: RequestEvent, collection: Collection, id?: str
         values[key] = String(form.get(key) ?? "").trim();
     }
     const errors: FormValues = {};
+    values.published_at = readDate(form, "published_at");
     const required = collection === "books" ? ["title", "author_id"] : ["name"];
     for (const key of required) if (!values[key]) errors[key] = "This field is required.";
     const textKey = collection === "books" ? "description" : "bio";

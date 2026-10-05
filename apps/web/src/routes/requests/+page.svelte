@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { useI18n } from "$lib/i18n/context";
+    import DateField from "$lib/components/DateField.svelte";
+    const { t, date } = useI18n();
     import { enhance } from "$app/forms";
     import type { BorrowRequest } from "$lib/types";
     import type { PageProps } from "./$types";
@@ -25,12 +28,12 @@
     }
 </script>
 
-<svelte:head><title>Requests and loans · ShelfShare</title></svelte:head>
+<svelte:head><title>{t("Requests and loans · ShelfShare")}</title></svelte:head>
 <section class="section">
-    <h1>Requests and loans</h1>
-    <p>Approve requests, arrange exchanges in messages, and confirm every book's return.</p>
-    {#if form?.message}<p class="alert" role="alert">{form.message}</p>{/if}{#if form?.success}<p role="status">
-            {form.success}
+    <h1>{t("Requests and loans")}</h1>
+    <p>{t("Approve requests, arrange exchanges in messages, and confirm every book's return.")}</p>
+    {#if form?.message}<p class="alert" role="alert">{t(form.message)}</p>{/if}{#if form?.success}<p role="status">
+            {t(form.success)}
         </p>{/if}
     <div class="copy-grid">
         {#each data.requests as request (request.id)}
@@ -38,22 +41,22 @@
             {@const conversation = data.conversations.find((c) => c.requestId === request.id)}
             <article class="panel stack">
                 <p class="eyebrow">
-                    {request.ownerId === data.user?.id ? "Lending" : "Borrowing"} · {request.status.replaceAll(
-                        "_",
-                        " "
-                    )}
+                    {t(request.ownerId === data.user?.id ? "Lending" : "Borrowing")} · {t(request.status)}
                 </p>
-                <h2><a href="/books/{request.copy.bookId}">{request.copy.book.Title}</a></h2>
-                <p>With <a href="/shelves/{peer}">{data.profiles[peer]?.displayName || "Reader"}</a></p>
+                <h2><a dir="auto" href="/books/{request.copy.bookId}">{request.copy.book.Title}</a></h2>
+                <p>
+                    {t("With")}
+                    <a dir="auto" href="/shelves/{peer}">{data.profiles[peer]?.displayName || t("Reader")}</a>
+                </p>
                 {#if request.dueAt}<p>
-                        Due {new Date(request.dueAt).toLocaleDateString()}{new Date(request.dueAt) < new Date() &&
+                        {t("Due {date}", { date: date(request.dueAt) })}{new Date(request.dueAt) < new Date() &&
                         ["borrowed", "return_pending"].includes(request.status)
-                            ? " · overdue"
+                            ? t(" · overdue")
                             : ""}
                     </p>{/if}
-                <p class="message-body">{request.message}</p>
+                <p class="message-body" dir="auto">{request.message}</p>
                 <a href={conversation ? `/messages?conversation=${conversation.id}` : `/messages?request=${request.id}`}
-                    >Arrange exchange in messages →</a
+                    >{t("Arrange exchange in messages →")}</a
                 >
                 {#each actions(request) as [action, label] (action)}<form
                         method="POST"
@@ -67,19 +70,22 @@
                             value={action}
                         />
                         {#if action === "accept" || action === "handover"}<label
-                                >Agreed due date (optional)<input type="date" name="dueAt" /></label
+                                >{t("Agreed due date (optional)")}<DateField
+                                    id="dueAt-{request.id}-{action}"
+                                    name="dueAt"
+                                /></label
                             >{/if}
-                        <button class="button secondary">{label}</button>
+                        <button class="button secondary">{t(label)}</button>
                     </form>{/each}
             </article>{/each}
     </div>
     {#if !data.requests.length}<div class="empty-state">
-            <h2>No requests yet</h2>
-            <a href="/shelves">Find a book to borrow →</a>
+            <h2>{t("No requests yet")}</h2>
+            <a href="/shelves">{t("Find a book to borrow →")}</a>
         </div>{/if}
     <div class="actions">
-        {#if data.page > 1}<a href="?page={data.page - 1}">← Previous</a>{/if}{#if data.page * 50 < data.total}<a
-                href="?page={data.page + 1}">Next →</a
+        {#if data.page > 1}<a href="?page={data.page - 1}">{t("← Previous")}</a>{/if}{#if data.page * 50 < data.total}<a
+                href="?page={data.page + 1}">{t("Next →")}</a
             >{/if}
     </div>
 </section>

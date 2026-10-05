@@ -1,7 +1,7 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Vazirmatn:wght@400;500;600;700&display=swap");
 
 :root {
-    font-family: "DM Sans", sans-serif;
+    font-family: "DM Sans", "Vazirmatn", Tahoma, sans-serif;
     color: #272e28;
     background: #f8f6ef;
     font-synthesis: none;
@@ -80,7 +80,7 @@ h1,
 h2,
 h3,
 .brand {
-    font-family: "Libre Caslon Text", Georgia, serif;
+    font-family: "Libre Caslon Text", "Vazirmatn", Georgia, serif;
     font-weight: 400;
 }
 h1 {
@@ -137,7 +137,7 @@ p {
     white-space: nowrap;
 }
 .brand-mark {
-    margin-right: 9px;
+    margin-inline-end: 9px;
     font-size: 2rem;
     vertical-align: middle;
 }
@@ -221,7 +221,7 @@ nav .active {
 }
 .art-label {
     position: absolute;
-    left: 35px;
+    inset-inline-start: 35px;
     top: 40px;
     font-size: 0.6rem;
     letter-spacing: 0.18em;
@@ -250,14 +250,14 @@ nav .active {
     letter-spacing: 0.18em;
 }
 .art-book-one {
-    left: 40px;
+    inset-inline-start: 40px;
     bottom: 40px;
     background: #264d3c;
     color: #f4e8ce;
     transform: rotate(-12deg);
 }
 .art-book-two {
-    right: 45px;
+    inset-inline-end: 45px;
     bottom: 40px;
     background: #c78b60;
     color: #382c26;
@@ -276,7 +276,7 @@ nav .active {
 }
 .art-star {
     position: absolute;
-    right: 60px;
+    inset-inline-end: 60px;
     top: 35px;
     font-size: 4rem;
     color: #b18a48;
@@ -720,7 +720,7 @@ hr {
 .message-notification {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    inset-inline-end: 20px;
     max-width: calc(100vw - 40px);
     background: #fffdf7;
     border: 1px solid var(--border);
@@ -736,7 +736,7 @@ hr {
     padding: 2px 7px;
     font-size: 0.75rem;
     width: fit-content;
-    margin-left: 4px;
+    margin-inline-start: 4px;
 }
 .header-inner nav {
     flex-wrap: wrap;
@@ -753,7 +753,7 @@ hr {
 }
 .skip-link {
     position: absolute;
-    left: 12px;
+    inset-inline-start: 12px;
     top: -100px;
     background: white;
     padding: 12px;
@@ -839,7 +839,7 @@ hr {
         align-items: end;
     }
     .section-heading > a {
-        text-align: right;
+        text-align: end;
     }
     .community-banner,
     .page-heading {
@@ -889,4 +889,46 @@ hr {
     * {
         transition: none !important;
     }
+}
+
+:root:lang(fa) {
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+}
+:lang(fa) :is(h1, h2, h3, .book-cover strong, .art-book, .art-book small) {
+    font-family: "Vazirmatn", Tahoma, sans-serif;
+    line-height: 1.6;
+}
+:lang(fa) :is(h1, h2, .eyebrow, .cover-top, .art-label, .art-book small) {
+    letter-spacing: normal;
+}
+.direction-arrow {
+    display: inline-block;
+}
+[dir="rtl"] .direction-arrow {
+    transform: scaleX(-1);
+}
+[dir="rtl"] .art-book-one {
+    transform: rotate(12deg);
+}
+[dir="rtl"] .art-book-two {
+    transform: rotate(-11deg);
+}
+.header-inner > *,
+.account-nav > *,
+.actions > * {
+    min-width: 0;
+}
+.account-nav {
+    flex-wrap: wrap;
+}
+.language-switch {
+    white-space: nowrap;
+}
+input:not([type="checkbox"]):not([type="hidden"]),
+textarea {
+    text-align: start;
+}
+bdi,
+[dir="auto"] {
+    unicode-bidi: isolate;
 }

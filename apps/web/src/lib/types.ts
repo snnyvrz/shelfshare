@@ -24,7 +24,7 @@ export type FormValues = Record<string, string>;
 
 export type Profile = { id: string; displayName: string; bio: string; location: string };
 export type OwnProfile = Profile & { discoveryCityId: string; discoveryEnabled: boolean };
-export type CityOption = { id: string; label: string };
+export type CityOption = { id: string; label: string; names?: { en: string; fa: string } };
 export type PhysicalCopy = {
     id: string;
     bookId: string;

@@ -1,4 +1,14 @@
 <script lang="ts">
+    import { useI18n } from "$lib/i18n/context";
+    const { t, n, date } = useI18n();
+    const connectionLabels = {
+        connected: "Connected",
+        disconnected: "Disconnected",
+        connecting: "Connecting…",
+        reconnecting: "Reconnecting…",
+        offline: "Offline",
+        expired: "Session expired — log in again",
+    };
     import { onDestroy } from "svelte";
     import { invalidateAll } from "$app/navigation";
     import { community, connection, realtimeEvent, sendEvent } from "$lib/realtime";
@@ -47,7 +57,7 @@
             retryMessage = null;
             sending = false;
         }
-        if ($connection === "Connected") sendEvent({ event: "presence", conversationId: c.id });
+        if ($connection === "connected") sendEvent({ event: "presence", conversationId: c.id });
         else {
             online = false;
             typing = false;
@@ -145,117 +155,132 @@
     }
 </script>
 
-<svelte:head><title>Messages · ShelfShare</title></svelte:head>
+<svelte:head><title>{t("Messages · ShelfShare")}</title></svelte:head>
 <section class="section">
     <div class="section-heading">
-        <h1>Messages</h1>
-        <span role="status" class="small muted">{$connection}</span>
+        <h1>{t("Messages")}</h1>
+        <span role="status" class="small muted">{t(connectionLabels[$connection])}</span>
     </div>
-    {#if error}<p class="alert" role="alert">{error}</p>{/if}
+    {#if error}<p class="alert" role="alert">{t(error)}</p>{/if}
     <div class="inbox-layout">
-        <aside class="panel inbox-list" aria-label="Conversations">
+        <aside class="panel inbox-list" aria-label={t("Conversations")}>
             {#each data.conversations as c (c.id)}<a
                     class:chosen={current?.id === c.id}
                     class="conversation-link"
                     href="/messages?conversation={c.id}&page={data.page}"
                 >
-                    <strong>{data.profiles[peer(c)]?.displayName || "Reader"}</strong>
-                    <span class="small">{c.request ? c.request.copy.book.Title : "Direct message"} · {c.status}</span>
-                    {#if c.lastMessage}<span class="message-preview">{c.lastMessage.body.slice(0, 100)}</span>{/if}
-                    {#if c.unread && current?.id !== c.id}<span class="unread-badge">{c.unread} unread</span>{/if}
+                    <strong dir="auto">{data.profiles[peer(c)]?.displayName || t("Reader")}</strong>
+                    <span class="small"
+                        ><bdi>{c.request ? c.request.copy.book.Title : t("Direct message")}</bdi> · {t(c.status)}</span
+                    >
+                    {#if c.lastMessage}<span class="message-preview" dir="auto">{c.lastMessage.body.slice(0, 100)}</span
+                        >{/if}
+                    {#if c.unread && current?.id !== c.id}<span class="unread-badge"
+                            >{t("{count} unread", { count: n(c.unread) })}</span
+                        >{/if}
                 </a>{/each}
-            {#if !data.conversations.length}<p>No conversations yet. <a href="/shelves">Find a reader →</a></p>{/if}
+            {#if !data.conversations.length}<p>
+                    {t("No conversations yet.")} <a href="/shelves">{t("Find a reader →")}</a>
+                </p>{/if}
             <div class="actions">
-                {#if data.page > 1}<a href="?page={data.page - 1}">← Previous</a
-                    >{/if}{#if data.page * 50 < data.total}<a href="?page={data.page + 1}">Next →</a>{/if}
+                {#if data.page > 1}<a href="?page={data.page - 1}">{t("← Previous")}</a
+                    >{/if}{#if data.page * 50 < data.total}<a href="?page={data.page + 1}">{t("Next →")}</a>{/if}
             </div>
         </aside>
         <div class="panel conversation-panel">
             {#if current}
                 <div class="section-heading">
                     <h2>
-                        <a href="/shelves/{peer(current)}">{data.profiles[peer(current)]?.displayName || "Reader"}</a>
+                        <a dir="auto" href="/shelves/{peer(current)}"
+                            >{data.profiles[peer(current)]?.displayName || t("Reader")}</a
+                        >
                     </h2>
                     {#if current.status === "accepted" && !data.blocked.includes(peer(current))}<span
-                            class="small muted">{online ? "Online" : "Offline"}</span
+                            class="small muted">{t(online ? "Online" : "Offline")}</span
                         >{/if}
                 </div>
                 {#if current.request}<p>
                         <a href="/requests"
-                            >{current.request.copy.book.Title} · {current.request.status.replaceAll("_", " ")} — View loan
-                            actions →</a
+                            ><bdi>{current.request.copy.book.Title}</bdi> · {t(current.request.status)} — {t(
+                                "View loan actions →"
+                            )}</a
                         >
                     </p>{/if}
                 {#if current.status === "pending"}
                     {#if current.initiator !== data.user?.id}<p>
-                            Message request: accept to reply and share online status.
+                            {t("Message request: accept to reply and share online status.")}
                         </p>
                         <div class="actions">
                             <button class="button" onclick={() => action(`/conversations/${current!.id}/accept`)}
-                                >Accept</button
+                                >{t("Accept")}</button
                             ><button
                                 class="button secondary"
-                                onclick={() => action(`/conversations/${current!.id}/decline`)}>Decline</button
+                                onclick={() => action(`/conversations/${current!.id}/decline`)}>{t("Decline")}</button
                             >
                         </div>
                     {:else}<p class="small muted">
-                            Send one introduction. Further messages become available when the recipient accepts.
+                            {t("Send one introduction. Further messages become available when the recipient accepts.")}
                         </p>{/if}
                 {/if}
                 <button
                     class="text-button danger"
                     onclick={() =>
                         action(`/blocks/${peer(current!)}`, data.blocked.includes(peer(current!)) ? "DELETE" : "POST")}
-                    >{data.blocked.includes(peer(current)) ? "Unblock reader" : "Block reader"}</button
+                    >{t(data.blocked.includes(peer(current)) ? "Unblock reader" : "Block reader")}</button
                 >
                 {#if current.request}<p class="small muted">
-                        Blocking stops direct messages. Active loan conversations remain available for return
-                        arrangements.
+                        {t(
+                            "Blocking stops direct messages. Active loan conversations remain available for return arrangements."
+                        )}
                     </p>{/if}
                 {#if messages.length >= 50}<button class="text-button" disabled={loadingOlder} onclick={loadOlder}
-                        >{loadingOlder ? "Loading…" : "Load older messages"}</button
+                        >{t(loadingOlder ? "Loading…" : "Load older messages")}</button
                     >{/if}
-                <div class="message-list" role="log" aria-label="Conversation messages" aria-live="polite">
+                <div class="message-list" role="log" aria-label={t("Conversation messages")} aria-live="polite">
                     {#each messages as message (message.id)}<article
                             class:mine={message.senderId === data.user?.id}
                             class="message-bubble"
                         >
                             <p class="small muted">
                                 {message.senderId === data.user?.id
-                                    ? "You"
-                                    : data.profiles[message.senderId]?.displayName || "Reader"} · {new Date(
-                                    message.createdAt
-                                ).toLocaleString()}
+                                    ? t("You")
+                                    : data.profiles[message.senderId]?.displayName || t("Reader")} · {date(
+                                    message.createdAt,
+                                    { hour: "2-digit", minute: "2-digit" }
+                                )}
                             </p>
-                            <p class="message-body">{message.body}</p>
+                            <p class="message-body" dir="auto">{message.body}</p>
                             {#if message.senderId === data.user?.id && readAt && new Date(message.createdAt) <= new Date(readAt)}<span
-                                    class="small muted">Read</span
+                                    class="small muted">{t("Read")}</span
                                 >{/if}
                         </article>{/each}
-                    {#if !messages.length}<p class="muted">Start with a friendly hello.</p>{/if}
+                    {#if !messages.length}<p class="muted">{t("Start with a friendly hello.")}</p>{/if}
                 </div>
-                <p class="small muted typing-indicator" role="status">{typing ? "Typing…" : ""}</p>
+                <p class="small muted typing-indicator" role="status">{typing ? t("Typing…") : ""}</p>
                 {#if canSend}<form onsubmit={send} class="stack">
                         <label
-                            >Your message<textarea
+                            >{t("Your message")}<textarea
+                                dir="auto"
                                 bind:value={body}
                                 oninput={signalTyping}
                                 maxlength="4000"
                                 required
                                 disabled={sending}></textarea></label
-                        ><button class="button" disabled={sending || $connection !== "Connected"}
-                            >{sending ? "Sending…" : "Send message"}</button
+                        ><button class="button" disabled={sending || $connection !== "connected"}
+                            >{t(sending ? "Sending…" : "Send message")}</button
                         >
                     </form>
                 {:else}<p class="muted">
-                        {current.status === "pending"
-                            ? "Waiting for the message request to be accepted."
-                            : "This conversation is read-only."}
+                        {t(
+                            current.status === "pending"
+                                ? "Waiting for the message request to be accepted."
+                                : "This conversation is read-only."
+                        )}
                     </p>{/if}
             {:else}<div class="empty-state">
-                    <h2>A conversation starts a connection</h2>
-                    <p>Choose a conversation or message someone from their public shelf.</p>
-                    <a href="/shelves">Explore shelves →</a>
+                    <h2>{t("A conversation starts a connection")}</h2>
+                    <p>{t("Choose a conversation or message someone from their public shelf.")}</p>
+                    <a href="/shelves">{t("Explore shelves →")}</a>
                 </div>{/if}
         </div>
     </div>

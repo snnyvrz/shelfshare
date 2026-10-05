@@ -53,7 +53,7 @@ test("city opt-in discovers readers and books by same city and approximate radiu
         await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
         await expect(
             page.locator("article").filter({ has: page.getByRole("heading", { name, exact: true }) })
-        ).toContainText("تهران / Tehran, ایران / Iran");
+        ).toContainText("Tehran, Iran");
 
         await page.getByLabel("Discovery", { exact: true }).selectOption("radius");
         await page.getByLabel("Search from city").selectOption("128747");

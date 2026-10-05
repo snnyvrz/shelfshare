@@ -3,6 +3,7 @@ import { api, ApiError, pageError, requireUser } from "$lib/server/api";
 import { profiles } from "$lib/server/community";
 import type { BorrowRequest, Conversation } from "$lib/types";
 import type { Actions, PageServerLoad } from "./$types";
+import { readDate } from "$lib/i18n/calendar";
 export const load: PageServerLoad = async (event) => {
     event.depends("shelfshare:community");
     requireUser(event);
@@ -28,7 +29,9 @@ export const actions: Actions = {
     transition: async (event) => {
         requireUser(event);
         const form = await event.request.formData();
-        const due = String(form.get("dueAt") || "");
+        const due = readDate(form, "dueAt");
+        if (due && (!/^\d{4}-\d{2}-\d{2}$/.test(due) || Number.isNaN(new Date(`${due}T23:59:59Z`).getTime())))
+            return fail(400, { message: "Enter a valid date." });
         try {
             await api(
                 event,

@@ -48,7 +48,11 @@ export function cityOptions(query = "") {
     const q = normalize(query.slice(0, 100));
     return cities
         .filter((city) => [city.name, city.nameFa, ...city.aliases].some((name) => normalize(name).includes(q)))
-        .map((city) => ({ id: city.id, label: cityLabel(city) }));
+        .map((city) => ({
+            id: city.id,
+            label: cityLabel(city),
+            names: { en: `${city.name}, Iran`, fa: `${city.nameFa}، ایران` },
+        }));
 }
 
 export function distanceKm(a: (typeof cities)[number], b: (typeof cities)[number]) {

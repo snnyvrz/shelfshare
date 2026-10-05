@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 export default defineConfig({
     testDir: "./e2e",
+    testIgnore: "localization.spec.ts",
     outputDir: "./test-results",
     timeout: 60000,
     workers: 1,

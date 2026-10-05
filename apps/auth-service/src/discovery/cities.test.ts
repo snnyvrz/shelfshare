@@ -8,7 +8,8 @@ it("finds bilingual names, transliterations and Persian/Arabic variants without 
     assert.equal(cityOptions("Esfahan")[0].id, "418863");
     assert.equal(cityOptions("Orumiyeh")[0].id, "121801");
     assert.equal(cityOptions().length, 12);
-    assert.deepEqual(Object.keys(cityOptions()[0]), ["id", "label"]);
+    assert.deepEqual(Object.keys(cityOptions()[0]), ["id", "label", "names"]);
+    assert.deepEqual(cityOptions()[0].names, { en: "Tehran, Iran", fa: "تهران، ایران" });
     assert.equal(new Set(cities.map((city) => city.id)).size, 12);
 });
 

@@ -22,6 +22,10 @@
             "executor": "nx:run-commands",
             "options": { "command": "playwright test --config apps/web/playwright.config.ts" }
         },
+        "e2e-i18n": {
+            "executor": "nx:run-commands",
+            "options": { "command": "playwright test --config apps/web/playwright.i18n.config.ts" }
+        },
         "test": {
             "executor": "nx:run-commands",
             "options": { "command": "node --import tsx --test apps/web/tests/*.test.ts" }

@@ -3,6 +3,7 @@ import { pageError, requireUser } from "$lib/server/api";
 import type { Actions, PageServerLoad } from "./$types";
 import { api } from "$lib/server/api";
 import type { Profile, OwnProfile, CityOption } from "$lib/types";
+import { latinDigits } from "$lib/i18n/calendar";
 export const load: PageServerLoad = async (event) => {
     event.depends("shelfshare:community");
     try {
@@ -14,7 +15,7 @@ export const load: PageServerLoad = async (event) => {
             event.locals.user ? api<OwnProfile>(event, "/me", {}, true) : Promise.resolve(null),
         ]);
         const cityId = event.url.searchParams.get("cityId") ?? own?.discoveryCityId ?? "";
-        const radiusKm = event.url.searchParams.get("radiusKm") || "25";
+        const radiusKm = latinDigits(event.url.searchParams.get("radiusKm") || "25").replace(/٫/g, ".");
         const filters = new URLSearchParams({ mode, cityId, radiusKm });
         const page = Number(event.url.searchParams.get("page")) || 1;
         const readersPage = Number(event.url.searchParams.get("readersPage")) || 1;

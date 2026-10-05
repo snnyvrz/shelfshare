@@ -179,6 +179,16 @@ the searchable book catalog and author directory, personal copy management
 (`/my-shelf`), profile settings (`/account/profile`), requests/loans (`/requests`)
 and a real-time inbox (`/messages`).
 
+The interface supports **Persian (default, RTL)** and **English (LTR)**. The header's
+فارسی / English switch saves a one-year language preference in an HttpOnly cookie.
+Language and direction are rendered server-side; switching with JavaScript keeps
+the current page and drafts intact. City selectors and recognized city locations
+use the selected language; free-text locations and reader-provided content are preserved.
+Persian mode uses Jalali dates and Persian digits. Date fields accept `YYYY/MM/DD`
+with Persian, Arabic or Latin digits and convert to ISO Gregorian dates for the APIs.
+Displayed dates/timestamps use an explicit UTC timezone for consistent SSR and hydration.
+Translations and formatting helpers live in `apps/web/src/lib/i18n/`.
+
 The web development server loads `JWT_SECRET`, `BOOKS_API_URL`, `BOOKS_WS_URL`, and `AUTH_API_URL`
 from the root `.env.dev`. API URLs default to `http://localhost:8080/api` and
 `http://localhost:3030/api/auth`. REST calls go through the SvelteKit server.
@@ -209,6 +219,16 @@ API rejection, and a two-account real-time messaging and complete lending
 journey. Run against disposable databases: the catalog test removes its records,
 while lending history and uniquely named test accounts are retained. Set `PLAYWRIGHT_CHANNEL=chrome` to use
 an existing Chrome installation instead of downloading Chromium.
+
+Localization browser checks use isolated in-memory API fixtures and need no databases:
+
+```sh
+bun x nx run web:e2e-i18n
+```
+
+They cover initial Persian SSR, English preference persistence, localized cities,
+Jalali form conversion (including without JavaScript), draft preservation, and mobile RTL layout.
+The existing domain browser journeys explicitly select English.
 
 The production build is written to `apps/web/build`. Provide the API URLs and
 shared secret in the server environment, and set `ORIGIN` to the frontend's
