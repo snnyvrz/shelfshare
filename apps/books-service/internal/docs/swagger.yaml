@@ -1016,6 +1016,55 @@ paths:
       summary: List your private shelf, including hidden copies
       tags:
         - Shelves
+  /nearby/copies:
+    get:
+      parameters:
+        - description: city or radius
+          in: query
+          name: mode
+          required: true
+          type: string
+        - description: Origin city ID from auth-service /cities
+          in: query
+          name: cityId
+          required: true
+          type: string
+        - description: City-centre radius (1–500 km)
+          in: query
+          name: radiusKm
+          type: number
+        - description: Page (50 copies)
+          in: query
+          name: page
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+        - BearerAuth: []
+      summary: Discover public copies by their owners' selected cities
+      tags:
+        - Shelves
   /request-conversations/{id}:
     get:
       parameters:

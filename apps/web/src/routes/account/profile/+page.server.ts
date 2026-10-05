@@ -1,11 +1,15 @@
 import { fail } from "@sveltejs/kit";
 import { api, ApiError, pageError, requireUser } from "$lib/server/api";
-import type { Profile } from "$lib/types";
+import type { OwnProfile, CityOption } from "$lib/types";
 import type { Actions, PageServerLoad } from "./$types";
 export const load: PageServerLoad = async (event) => {
     requireUser(event);
     try {
-        return { profile: await api<Profile>(event, "/me", {}, true) };
+        const [profile, cities] = await Promise.all([
+            api<OwnProfile>(event, "/me", {}, true),
+            api<{ data: CityOption[] }>(event, "/cities", {}, true),
+        ]);
+        return { profile, cities: cities.data };
     } catch (cause) {
         pageError(cause);
     }
@@ -20,11 +24,12 @@ export const actions: Actions = {
                 "/me",
                 {
                     method: "PATCH",
-                    body: JSON.stringify(
-                        Object.fromEntries(
-                            ["displayName", "bio", "location"].map((key) => [key, String(form.get(key) || "")])
-                        )
-                    ),
+                    body: JSON.stringify({
+                        ...Object.fromEntries(["displayName", "bio"].map((key) => [key, String(form.get(key) || "")])),
+                        ...(form.get("location") !== null ? { location: String(form.get("location")) } : {}),
+                        discoveryCityId: String(form.get("discoveryCityId") || ""),
+                        discoveryEnabled: form.get("discoveryEnabled") === "on",
+                    }),
                 },
                 true
             );

@@ -75,14 +75,16 @@ runs books-service, auth-service, and web together through Nx with labeled logs
 and hot reload. Open **http://localhost:5173** once the applications are ready.
 The books-service Swagger generation still runs before its API starts.
 
-Press **Ctrl+C** to stop the applications. The databases stay running for quick
-restarts. To stop the database containers as well, retaining their stored data:
+Press **Ctrl+C** to stop the applications and automatically run `bun run dev:stop`
+to stop the database containers. Stored data is preserved. The launcher also
+cleans up on termination or when startup fails. To stop databases manually:
 
 ```sh
 bun run dev:stop
 ```
 
-The launcher is in `scripts/dev.sh`. To start only the databases:
+The launcher is in `scripts/dev.sh` and uses `setsid` (provided by Linux
+`util-linux`) to shut down the application process group. To start only the databases:
 
 ```sh
 docker compose --env-file .env.dev up -d --wait
@@ -274,11 +276,18 @@ Auth-service routes are under `/api/auth`:
 - `GET /profiles?q=...&page=...`, `GET /profiles/:userId` — public reader
   discovery by display name/general location, deliberately limited projection
 - `GET /me`, `PATCH /me` — authenticated profile access
+- `GET /cities?q=...` — bilingual Iranian launch-city choices, no coordinates
+- `GET /nearby/profiles?mode=city|radius&cityId=...&radiusKm=...&page=...&q=...`
+  — signed-in geographic reader discovery
+- `GET /nearby/owners?mode=city|radius&cityId=...&radiusKm=...` — signed-in,
+  complete eligible owner IDs with city ranks, used by books-service
 
 Books-service routes are under `/api` (full generated docs at `/swagger/index.html`):
 
 - `/books`, `/authors` — shared catalog
 - `GET /copies?ownerId=...&bookId=...&page=...`, `GET /me/copies`
+- `GET /nearby/copies?mode=city|radius&cityId=...&radiusKm=...&page=...`
+  — signed-in public copies, nearest owner city first, then newest copy
 - `POST /copies`, `PATCH /copies/:id`, `DELETE /copies/:id` (archive)
 - `POST /copies/:id/requests`, `GET /requests`
 - `POST /requests/:id/:action` — `accept`, `decline`, `cancel`, `handover`,
@@ -294,6 +303,51 @@ Shelf, request and conversation lists use 50-item pages. Message history returns
 the newest 50 messages; use `before` (RFC3339 timestamp) and `beforeId` as a
 compound cursor for older messages. All private resources are participant- or
 owner-scoped; clients cannot supply ownership or borrowing status directly.
+
+### Nearby discovery
+
+Select a city in `/account/profile` and explicitly enable nearby discovery to
+include yourself and your visible, unarchived copies. Existing accounts and new
+accounts are excluded until they opt in. Selecting a city sets the public
+general-location label; disabling discovery does not hide your existing public
+profile/shelf. Clearing the city removes its label and disables discovery.
+
+Signed-in readers can search `/shelves` from any supported city without opting
+in themselves. Same-city searches match canonical city IDs; radius searches use
+approximate straight-line distances between representative city points, never
+GPS, addresses or person-to-person distances. Presets are 10, 25, 50 and 100 km;
+custom radii range from 1 to 500 km. Books use the owner's selected city, which
+may differ from the physical copy's current location. The text query filters
+readers only. Geographic filters apply to both reader and copy results before
+their independent 50-item pagination; radius results are nearest-city first.
+
+Launch cities: Tehran, Mashhad, Isfahan, Karaj, Shiraz, Tabriz, Qom, Ahvaz,
+Kermanshah, Urmia, Rasht and Zahedan. Labels are Persian/English. The bundled
+city dataset is derived from [GeoNames](https://www.geonames.org/), licensed
+under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). See
+`apps/auth-service/src/discovery/DATA.md` for provenance and updates. No external
+location API, key or paid subscription is needed.
+
+Auth-service stores indexed city IDs and opt-in preferences. Coordinates remain
+in its city catalogue, not user documents or public API responses. MongoDB
+creates the compound discovery index through the existing Mongoose index setup;
+verify it is ready when deploying. Books-service forwards the verified bearer
+token to auth-service to resolve all eligible owners, joins them into its query,
+and counts/paginates afterwards. Set `AUTH_API_URL` on **books-service** as well
+as web (default `http://localhost:3030/api/auth`). If auth-service is unavailable,
+nearby book discovery returns 503 rather than unfiltered results. The initial
+complete-owner exchange is bounded at 16 MiB and fails explicitly if exceeded;
+large-scale deployments will need a different cross-service query strategy.
+
+Run the real-MongoDB discovery test against a disposable database:
+
+```sh
+DISCOVERY_MONGO_URL=mongodb://localhost:27019 bun x nx run auth-service:test --skip-nx-cache
+```
+
+It drops the dedicated `shelfshare_discovery_test` database. PostgreSQL discovery
+coverage is part of the existing tagged integration suite. The browser discovery
+scenario requires the services and disposable E2E databases described above.
 
 ### WebSocket configuration and protocol
 

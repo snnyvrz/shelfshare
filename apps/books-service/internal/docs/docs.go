@@ -1104,6 +1104,80 @@ const docTemplate = `{
                 }
             }
         },
+        "/nearby/copies": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Shelves"
+                ],
+                "summary": "Discover public copies by their owners' selected cities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "city or radius",
+                        "name": "mode",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Origin city ID from auth-service /cities",
+                        "name": "cityId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "City-centre radius (1–500 km)",
+                        "name": "radiusKm",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page (50 copies)",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/request-conversations/{id}": {
             "get": {
                 "security": [

@@ -13,6 +13,8 @@ export type UserDocument = HydratedDocument<User>;
             delete ret.passwordHash;
             delete ret.createdAt;
             delete ret.updatedAt;
+            delete ret.discoveryCityId;
+            delete ret.discoveryEnabled;
         },
     },
 })
@@ -26,6 +28,12 @@ export class User {
     @Prop({ type: String, default: "", maxlength: 120 })
     location!: string;
 
+    @Prop({ type: String, default: "" })
+    discoveryCityId!: string;
+
+    @Prop({ type: Boolean, default: false })
+    discoveryEnabled!: boolean;
+
     @Prop({ type: String, required: true, unique: true, lowercase: true, trim: true })
     email!: string;
 
@@ -34,3 +42,4 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index({ discoveryEnabled: 1, discoveryCityId: 1 });

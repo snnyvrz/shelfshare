@@ -15,6 +15,7 @@ import (
 func (s *Service) Register(public, private *gin.RouterGroup) {
 	public.GET("/copies", s.copies)
 	private.GET("/me/copies", s.myCopies)
+	private.GET("/nearby/copies", s.nearbyCopies)
 	private.POST("/copies", s.createCopy)
 	private.PATCH("/copies/:id", s.editCopy)
 	private.DELETE("/copies/:id", s.archiveCopy)
@@ -99,11 +100,18 @@ func (s *Service) copies(c *gin.Context) {
 		}
 		query = query.Where("book_id = ?", b)
 	}
+	s.listCopies(c, query.Order("created_at DESC").Order("id ASC"))
+}
+
+func (s *Service) listCopies(c *gin.Context, query *gorm.DB) {
 	size, offset := limit(c)
 	var total int64
-	query.Count(&total)
+	if err := query.Session(&gorm.Session{}).Select("copies.id").Count(&total).Error; err != nil {
+		fail(c, err)
+		return
+	}
 	copies := []Copy{}
-	if err := query.Order("created_at DESC").Limit(size).Offset(offset).Find(&copies).Error; err != nil {
+	if err := query.Limit(size).Offset(offset).Find(&copies).Error; err != nil {
 		fail(c, err)
 		return
 	}

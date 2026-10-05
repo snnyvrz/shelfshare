@@ -33,6 +33,8 @@ describe("AuthController API", () => {
                             location: "London",
                         }),
                         updateProfile: async (id: string, body: Record<string, unknown>) => ({ id, ...body }),
+                        nearbyProfiles: async () => ({ data: [], total: 0 }),
+                        nearbyOwners: async () => ({ data: [] }),
                     },
                 },
             ],
@@ -123,5 +125,21 @@ describe("AuthController API", () => {
         const mine = await fetch(`${baseUrl}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         assert.equal(mine.status, 200);
         assert.equal((await mine.json()).id, "0123456789abcdef01234567");
+    });
+
+    it("requires verified JWTs for geographic discovery while city choices are public", async () => {
+        const choices = await fetch(`${baseUrl}/api/auth/cities?q=كرج`);
+        assert.equal(choices.status, 200);
+        assert.equal((await choices.json()).data[0].id, "128747");
+        const token = new JwtService({ secret: "profile-test-secret" }).sign(
+            { sub: "0123456789abcdef01234567", email: "reader@example.com" },
+            { expiresIn: 60 }
+        );
+        for (const endpoint of ["nearby/profiles", "nearby/owners"]) {
+            const url = `${baseUrl}/api/auth/${endpoint}?mode=city&cityId=112931`;
+            assert.equal((await fetch(url)).status, 401);
+            assert.equal((await fetch(url, { headers: { Authorization: "Bearer invalid" } })).status, 401);
+            assert.equal((await fetch(url, { headers: { Authorization: `Bearer ${token}` } })).status, 200);
+        }
     });
 });

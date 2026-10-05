@@ -15,6 +15,7 @@ import {
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard, type AuthenticatedRequest } from "./jwt-auth.guard";
+import { cityOptions } from "../discovery/cities";
 
 type Credentials = {
     email?: string;
@@ -71,7 +72,25 @@ export class AuthController {
     @Get("me")
     @UseGuards(JwtAuthGuard)
     me(@Req() request: AuthenticatedRequest) {
-        return this.auth.profile(request.user!.id);
+        return this.auth.profile(request.user!.id, true);
+    }
+
+    @Get("cities")
+    cities(@Query("q") query = "") {
+        if (typeof query !== "string") throw new BadRequestException("Invalid city search");
+        return { data: cityOptions(query) };
+    }
+
+    @Get("nearby/profiles")
+    @UseGuards(JwtAuthGuard)
+    nearbyProfiles(@Query() params: Record<string, unknown>) {
+        return this.auth.nearbyProfiles(params);
+    }
+
+    @Get("nearby/owners")
+    @UseGuards(JwtAuthGuard)
+    nearbyOwners(@Query() params: Record<string, unknown>) {
+        return this.auth.nearbyOwners(params);
     }
 
     @Patch("me")
